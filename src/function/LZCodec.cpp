@@ -25,27 +25,6 @@ LZCodec::LZCodec()
     _bufferSize = 0;
 }
 
-inline int LZCodec::emitLength(byte block[], int length)
-{
-    int idx = 0;
-
-    while (length >= 0x1FE) {
-        block[idx] = byte(0xFF);
-        block[idx + 1] = byte(0xFF);
-        idx += 2;
-        length -= 0x1FE;
-    }
-
-    if (length >= 0xFF) {
-        block[idx] = byte(0xFF);
-        idx++;
-        length -= 0xFF;
-    }
-
-    block[idx] = byte(length);
-    return idx + 1;
-}
-
 int LZCodec::emitLastLiterals(byte src[], byte dst[], int runLength)
 {
     int dstIdx = 1;
@@ -351,15 +330,4 @@ bool LZCodec::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int cou
     input._index = srcIdx;
     output._index = dstIdx;
     return srcIdx == srcEnd;
-}
-
-inline void LZCodec::customArrayCopy(byte src[], byte dst[], int len)
-{
-    for (int i = 0; i < len; i += 8)
-        memcpy(&dst[i], &src[i], 8);
-}
-
-inline bool LZCodec::differentInts(byte block[], int srcIdx, int dstIdx)
-{
-    return *((int32*)&block[srcIdx]) != *((int32*)&block[dstIdx]);
 }
