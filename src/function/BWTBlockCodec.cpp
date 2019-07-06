@@ -16,6 +16,7 @@ limitations under the License.
 #include <cstring>
 #include "BWTBlockCodec.hpp"
 
+
 using namespace kanzi;
 
 BWTBlockCodec::BWTBlockCodec(map<string, string>& ctx)

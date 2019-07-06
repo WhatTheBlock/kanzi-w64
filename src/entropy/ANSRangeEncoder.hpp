@@ -17,6 +17,7 @@ limitations under the License.
 #define _ANSRangeEncoder_
 
 #include "../EntropyEncoder.hpp"
+#include "../Global.hpp"
 
 using namespace std;
 

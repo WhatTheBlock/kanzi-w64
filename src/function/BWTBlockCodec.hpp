@@ -20,6 +20,7 @@ limitations under the License.
 #include <string>
 #include "../transform/BWT.hpp"
 #include "../Function.hpp"
+#include <stdexcept>
 
 using namespace std;
 
