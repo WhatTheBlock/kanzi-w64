@@ -1,0 +1,1794 @@
+/*
+Copyright 2011-2017 Frederic Langlet
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+you may obtain a copy of the License at
+
+                http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+#include <cstring>
+#include <stdexcept>
+#include <algorithm>
+#include <sstream>
+#include "TextCodec.hpp"
+#include "../Global.hpp"
+
+using namespace kanzi;
+
+// 1024 of the most common English words with at least 2 chars.
+// Each char is 6 bit encoded: 0 to 31. Add 32 to a letter starting a word (MSB).
+// TheBeAndOfInToHaveItThatFor...
+const byte TextCodec::DICT_EN_1024[] = {
+	byte(0xCC), byte(0x71), byte(0x21), byte(0x12), byte(0x03), byte(0x43), byte(0xB8), byte(0x5A),
+	byte(0x0D), byte(0xCC), byte(0xED), byte(0x88), byte(0x4C), byte(0x7A), byte(0x13), byte(0xCC),
+	byte(0x70), byte(0x13), byte(0x94), byte(0xE4), byte(0x78), byte(0x39), byte(0x49), byte(0xC4),
+	byte(0x9C), byte(0x05), byte(0x44), byte(0xB8), byte(0xDC), byte(0x80), byte(0x20), byte(0x3C),
+	byte(0x80), byte(0x62), byte(0x04), byte(0xE1), byte(0x51), byte(0x3D), byte(0x84), byte(0x85),
+	byte(0x89), byte(0xC0), byte(0x0F), byte(0x31), byte(0xC4), byte(0x62), byte(0x04), byte(0xB6),
+	byte(0x39), byte(0x42), byte(0xC3), byte(0xD8), byte(0x73), byte(0xAE), byte(0x46), byte(0x20),
+	byte(0x0D), byte(0xB0), byte(0x06), byte(0x23), byte(0x3B), byte(0x31), byte(0xC8), byte(0x4B),
+	byte(0x60), byte(0x12), byte(0xA1), byte(0x2B), byte(0x14), byte(0x08), byte(0x78), byte(0x0D),
+	byte(0x62), byte(0x54), byte(0x4E), byte(0x32), byte(0xD3), byte(0x93), byte(0xC8), byte(0x71),
+	byte(0x36), byte(0x1C), byte(0x04), byte(0xF3), byte(0x1C), byte(0x42), byte(0x11), byte(0xD8),
+	byte(0x72), byte(0x02), byte(0x1E), byte(0x61), byte(0x13), byte(0x98), byte(0x85), byte(0x44),
+	byte(0x9C), byte(0x04), byte(0xA0), byte(0x44), byte(0x49), byte(0xC8), byte(0x32), byte(0x71),
+	byte(0x11), byte(0x88), byte(0xE3), byte(0x04), byte(0xB1), byte(0x8B), byte(0x94), byte(0x47),
+	byte(0x61), byte(0x11), byte(0x13), byte(0x62), byte(0x0B), byte(0x2F), byte(0x23), byte(0x8C),
+	byte(0x12), byte(0x11), byte(0x02), byte(0x01), byte(0x44), byte(0x84), byte(0xCC), byte(0x71),
+	byte(0x11), byte(0x13), byte(0x31), byte(0xD1), byte(0x39), byte(0x41), byte(0x87), byte(0xCC),
+	byte(0x42), byte(0xCB), byte(0xD8), byte(0x71), byte(0x0D), byte(0xD8), byte(0xE4), byte(0x4A),
+	byte(0xCC), byte(0x71), byte(0x0C), byte(0xE0), byte(0x44), byte(0xF4), byte(0x3E), byte(0xE5),
+	byte(0x8D), byte(0xB9), byte(0x44), byte(0xE8), byte(0x35), byte(0x33), byte(0xA9), byte(0x51),
+	byte(0x24), byte(0xE2), byte(0x39), byte(0x42), byte(0xC3), byte(0xB9), byte(0x51), byte(0x11),
+	byte(0xB8), byte(0xB0), byte(0xF3), byte(0x1C), byte(0x83), byte(0x4A), byte(0x8C), byte(0x06),
+	byte(0x36), byte(0x01), byte(0x8C), byte(0xC7), byte(0x00), byte(0xDA), byte(0xC8), byte(0x28),
+	byte(0x4B), byte(0x93), byte(0x1C), byte(0x44), byte(0x67), byte(0x39), byte(0x6C), byte(0xC7),
+	byte(0x10), byte(0xDA), byte(0x13), byte(0x4A), byte(0xF1), byte(0x0E), byte(0x3C), byte(0xB1),
+	byte(0x33), byte(0x58), byte(0xEB), byte(0x0E), byte(0x44), byte(0x4C), byte(0xC7), byte(0x11),
+	byte(0x21), byte(0x21), byte(0x10), byte(0x43), byte(0x6D), byte(0x39), byte(0x6D), byte(0x80),
+	byte(0x35), byte(0x39), byte(0x48), byte(0x45), byte(0x24), byte(0xED), byte(0x11), byte(0x6D),
+	byte(0x12), byte(0x13), byte(0x21), byte(0x04), byte(0xCC), byte(0x83), byte(0x04), byte(0xB0),
+	byte(0x03), byte(0x6C), byte(0x00), byte(0xD6), byte(0x33), byte(0x1C), byte(0x83), byte(0x46),
+	byte(0xB0), byte(0x02), byte(0x84), byte(0x9C), byte(0x44), byte(0x44), byte(0xD8), byte(0x42),
+	byte(0xCB), byte(0xB8), byte(0xD2), byte(0xD8), byte(0x9C), byte(0x84), byte(0xB5), byte(0x11),
+	byte(0x16), byte(0x20), byte(0x15), byte(0x31), byte(0x11), byte(0xD8), byte(0x84), byte(0xC7),
+	byte(0x39), byte(0x44), byte(0xE0), byte(0x34), byte(0xE4), byte(0xC7), byte(0x11), byte(0x1B),
+	byte(0x4E), byte(0x80), byte(0xB2), byte(0xE1), byte(0x10), byte(0xB2), byte(0x04), byte(0x54),
+	byte(0x48), byte(0x44), byte(0x14), byte(0xE4), byte(0x44), byte(0xB8), byte(0x51), byte(0x73),
+	byte(0x1C), byte(0xE5), byte(0x06), byte(0x1F), byte(0x23), byte(0xA0), byte(0x18), byte(0x02),
+	byte(0x0D), byte(0x49), byte(0x3D), byte(0x87), byte(0x20), byte(0xB1), byte(0x2B), byte(0x01),
+	byte(0x24), byte(0xF3), byte(0x38), byte(0xE8), byte(0xCE), byte(0x58), byte(0xDC), byte(0xCE),
+	byte(0x0C), byte(0x06), byte(0x32), byte(0x00), byte(0xC1), byte(0x21), byte(0x00), byte(0x22),
+	byte(0xB3), byte(0x00), byte(0xA1), byte(0x24), byte(0x00), byte(0x21), byte(0xE3), byte(0x20),
+	byte(0x51), byte(0x44), byte(0x44), byte(0x43), byte(0x53), byte(0xD8), byte(0x71), byte(0x11),
+	byte(0x12), byte(0x11), byte(0x13), byte(0x58), byte(0x41), byte(0x0D), byte(0xCC), byte(0x73),
+	byte(0x92), byte(0x12), byte(0x45), byte(0x44), byte(0x37), byte(0x21), byte(0x04), byte(0x37),
+	byte(0x43), byte(0x43), byte(0x11), byte(0x18), byte(0x01), byte(0x39), byte(0x44), byte(0xEE),
+	byte(0x34), byte(0x48), byte(0x0B), byte(0x48), byte(0xE9), byte(0x40), byte(0x09), byte(0x3B),
+	byte(0x14), byte(0x49), byte(0x38), byte(0x02), byte(0x4D), byte(0x40), byte(0x0B), byte(0x2D),
+	byte(0x8B), byte(0xD1), byte(0x11), byte(0x51), byte(0x0D), byte(0x4E), byte(0x45), byte(0xCF),
+	byte(0x10), byte(0x24), byte(0xE2), byte(0x38), byte(0xD4), byte(0xC0), byte(0x20), byte(0xD8),
+	byte(0x8E), byte(0x34), byte(0x21), byte(0x11), byte(0x36), byte(0xC1), byte(0x32), byte(0x08),
+	byte(0x73), byte(0x8E), byte(0x2F), byte(0x81), byte(0x00), byte(0x47), byte(0x32), byte(0x0F),
+	byte(0xAC), byte(0x00), byte(0x63), byte(0x50), byte(0x49), byte(0x15), byte(0x11), byte(0x1C),
+	byte(0xCE), byte(0x58), byte(0x04), byte(0x43), byte(0x98), byte(0x84), byte(0x4B), byte(0x94),
+	byte(0x84), byte(0x4C), byte(0x98), byte(0xB0), byte(0x12), byte(0x4A), byte(0x60), byte(0x12),
+	byte(0xA8), byte(0x41), byte(0x0F), byte(0xD8), byte(0xE4), byte(0x4B), byte(0x0F), byte(0x24),
+	byte(0xC8), byte(0x2C), byte(0xBD), byte(0x84), byte(0x35), byte(0x3C), byte(0x87), byte(0x39),
+	byte(0x42), byte(0xC3), byte(0xC8), byte(0xF1), byte(0x0D), byte(0x0F), byte(0x24), byte(0xC0),
+	byte(0x18), byte(0x48), byte(0xCE), byte(0x09), byte(0x33), byte(0x91), byte(0xB0), byte(0x81),
+	byte(0x87), byte(0x4E), byte(0x93), byte(0x81), byte(0x98), byte(0xE8), byte(0x8E), byte(0x35),
+	byte(0x32), byte(0x0D), byte(0x50), byte(0x49), byte(0x15), byte(0x11), byte(0x16), byte(0x0E),
+	byte(0x34), byte(0x4B), byte(0x44), byte(0x54), byte(0x44), byte(0x60), byte(0x35), byte(0x25),
+	byte(0x84), byte(0x46), byte(0x51), byte(0x16), byte(0xB0), byte(0x40), byte(0x0D), byte(0x8C),
+	byte(0x81), byte(0x45), byte(0x11), byte(0x11), byte(0x0D), byte(0x08), byte(0x4C), byte(0xC4),
+	byte(0x34), byte(0x3B), byte(0x44), byte(0x10), byte(0x3A), byte(0xC4), byte(0x01), byte(0x51),
+	byte(0x33), byte(0x45), byte(0x8B), byte(0x48), byte(0x08), byte(0x49), byte(0xCE), byte(0x2C),
+	byte(0x3C), byte(0x8E), byte(0x30), byte(0x44), byte(0xC7), byte(0x20), byte(0xD1), byte(0xA0),
+	byte(0x48), byte(0xAD), byte(0x80), byte(0x44), byte(0xCA), byte(0xC8), byte(0x3E), byte(0x23),
+	byte(0x95), byte(0x11), byte(0x1A), byte(0x12), byte(0x49), byte(0x41), byte(0x27), byte(0x00),
+	byte(0xF3), byte(0xC4), byte(0x37), byte(0x35), byte(0x11), byte(0x36), byte(0xB3), byte(0x8E),
+	byte(0x2B), byte(0x25), byte(0x11), byte(0x12), byte(0x32), byte(0x12), byte(0x08), byte(0xE5),
+	byte(0x44), byte(0x46), byte(0x52), byte(0x06), byte(0x1D), byte(0x3B), byte(0x00), byte(0x0E),
+	byte(0x32), byte(0x11), byte(0x10), byte(0x24), byte(0xC8), byte(0x38), byte(0xD8), byte(0x06),
+	byte(0x44), byte(0x41), byte(0x32), byte(0x38), byte(0xC1), byte(0x0E), byte(0x34), byte(0x49),
+	byte(0x40), byte(0x20), byte(0xBC), byte(0x44), byte(0x48), byte(0xF1), byte(0x02), byte(0x4E),
+	byte(0xD3), byte(0x93), byte(0x20), byte(0x21), byte(0x22), byte(0x1C), byte(0xE2), byte(0x02),
+	byte(0x12), byte(0x11), byte(0x06), byte(0x20), byte(0xDC), byte(0xC7), byte(0x44), byte(0x41),
+	byte(0x32), byte(0x61), byte(0x24), byte(0xC4), byte(0x32), byte(0xB1), byte(0x15), byte(0x10),
+	byte(0xB9), byte(0x44), byte(0x10), byte(0xBB), byte(0x04), byte(0x11), byte(0x38), byte(0x8E),
+	byte(0x30), byte(0xF0), byte(0x0D), byte(0x62), byte(0x13), byte(0x97), byte(0xC8), byte(0x73),
+	byte(0x96), byte(0xBC), byte(0xB0), byte(0x18), byte(0xAC), byte(0x85), byte(0x44), byte(0xAC),
+	byte(0x44), byte(0xD3), byte(0x11), byte(0x19), byte(0x06), byte(0x1A), byte(0xD5), byte(0x0C),
+	byte(0x04), byte(0x44), byte(0x6E), byte(0x3C), byte(0x43), byte(0x6F), byte(0x44), byte(0xE0),
+	byte(0x4B), byte(0x10), byte(0xC9), byte(0x40), byte(0x4E), byte(0x70), byte(0x0D), byte(0x0E),
+	byte(0xC1), byte(0x00), byte(0x49), byte(0x44), byte(0x44), byte(0xC1), byte(0x41), byte(0x12),
+	byte(0x4C), byte(0x83), byte(0x8D), byte(0x88), byte(0x02), byte(0xCB), byte(0xC4), byte(0x43),
+	byte(0x04), byte(0x30), byte(0x11), byte(0x11), byte(0x88), byte(0x44), byte(0x53), byte(0x00),
+	byte(0x83), byte(0x6F), byte(0x51), byte(0x3B), byte(0x44), byte(0x5D), byte(0x38), byte(0x87),
+	byte(0x00), byte(0x84), byte(0x72), byte(0x4C), byte(0x04), byte(0x53), byte(0xC5), byte(0x43),
+	byte(0x71), byte(0x00), byte(0x84), byte(0x84), byte(0x98), byte(0xE0), byte(0x0B), byte(0xC4),
+	byte(0x40), byte(0x0B), byte(0x2D), byte(0x89), byte(0xCE), byte(0x30), byte(0x4C), byte(0xC4),
+	byte(0x02), byte(0x20), byte(0x0D), byte(0x0C), byte(0x80), byte(0xC0), byte(0x4C), byte(0x4B),
+	byte(0x0E), byte(0x34), byte(0x46), byte(0x21), byte(0x51), byte(0x22), byte(0x0D), byte(0x11),
+	byte(0x24), byte(0xB8), byte(0x39), byte(0x43), byte(0x46), byte(0x98), byte(0xE3), byte(0x83),
+	byte(0x88), byte(0xE5), byte(0x11), byte(0x4E), byte(0x52), byte(0x0D), byte(0x0E), byte(0xA3),
+	byte(0x4E), byte(0x5A), byte(0xA2), byte(0x0D), byte(0x0E), byte(0x71), byte(0x0B), byte(0x3E),
+	byte(0xD2), byte(0x06), byte(0x1D), byte(0x38), byte(0x87), byte(0x20), byte(0xB0), byte(0xEB),
+	byte(0x39), byte(0x3E), byte(0x0E), byte(0x51), byte(0x1D), byte(0x12), byte(0x91), byte(0x81),
+	byte(0x38), byte(0x11), byte(0x2D), byte(0x8E), byte(0x44), byte(0x38), byte(0x48), byte(0x4F),
+	byte(0x50), byte(0x0D), byte(0xB0), byte(0xE3), byte(0x53), byte(0x1E), byte(0x70), byte(0x0B),
+	byte(0x16), byte(0xB3), byte(0x96), byte(0xB0), byte(0x82), byte(0xCB), byte(0x20), byte(0xE3),
+	byte(0x67), byte(0x20), byte(0x61), byte(0xEE), byte(0x44), byte(0x60), byte(0x0D), byte(0x21),
+	byte(0x90), byte(0x13), byte(0x20), byte(0xE3), byte(0x71), byte(0x10), byte(0x39), byte(0x91),
+	byte(0x10), byte(0x43), byte(0x61), byte(0x2D), byte(0x41), byte(0x36), byte(0x1C), byte(0x84),
+	byte(0xC4), byte(0x84), byte(0xB0), byte(0x02), byte(0x2B), byte(0x83), byte(0x94), byte(0x45),
+	byte(0x21), byte(0x0B), byte(0x16), byte(0x42), byte(0x06), byte(0x1D), byte(0x38), byte(0x4E),
+	byte(0x4C), byte(0x7A), byte(0xC8), byte(0x4D), byte(0x32), byte(0xC4), byte(0x9C), byte(0xE5),
+	byte(0x12), byte(0x12), byte(0xB1), byte(0x13), byte(0x8C), byte(0x44), byte(0x8F), byte(0x21),
+	byte(0x31), byte(0x2F), byte(0x44), byte(0xE5), byte(0x48), byte(0x0C), byte(0x4C), byte(0x84),
+	byte(0x45), byte(0x52), byte(0x02), byte(0x12), byte(0x72), byte(0x0C), byte(0x48), byte(0x42),
+	byte(0xC5), byte(0x95), byte(0x12), byte(0x04), byte(0x34), byte(0x38), byte(0xC4), byte(0x48),
+	byte(0x24), byte(0x48), byte(0x04), byte(0x49), byte(0x40), byte(0x4C), byte(0x71), byte(0x11),
+	byte(0x8C), byte(0x45), byte(0x44), byte(0x2C), byte(0xE3), byte(0xCC), byte(0x10), byte(0xD4),
+	byte(0xE0), byte(0x58), byte(0x06), byte(0x2A), byte(0x20), byte(0xB2), byte(0xF3), byte(0x44),
+	byte(0x83), byte(0xE7), byte(0x39), byte(0x44), byte(0x66), byte(0x00), byte(0xC1), byte(0x2E),
+	byte(0x15), byte(0x31), byte(0x0D), byte(0xBC), byte(0xB0), byte(0x0D), byte(0x4E), byte(0xF2),
+	byte(0xC0), byte(0x08), byte(0x49), byte(0x0D), byte(0x0E), byte(0x03), byte(0x0E), byte(0x34),
+	byte(0x6C), byte(0x88), byte(0x34), byte(0x21), byte(0x32), byte(0x4C), byte(0x03), byte(0x43),
+	byte(0x8C), byte(0x44), byte(0x88), byte(0x18), byte(0xDB), byte(0xC0), byte(0x45), byte(0x32),
+	byte(0x02), byte(0x50), byte(0xB0), byte(0x11), byte(0xC9), byte(0x40), byte(0xC3), byte(0x10),
+	byte(0xD2), byte(0xD8), byte(0xB0), byte(0x43), byte(0x01), byte(0x11), byte(0x1B), byte(0xC0),
+	byte(0x62), byte(0xB0), byte(0x16), byte(0x84), byte(0xE3), byte(0x8A), byte(0xC8), byte(0x82),
+	byte(0xC4), byte(0x34), byte(0x21), byte(0x20), byte(0x2C), byte(0xC3), byte(0x92), byte(0x4E),
+	byte(0x83), byte(0x42), byte(0x2D), byte(0x40), byte(0xC4), byte(0x80), byte(0x60), byte(0x08),
+	byte(0x36), byte(0x42), byte(0x13), byte(0x1C), byte(0x44), byte(0x73), byte(0x38), byte(0xE2),
+	byte(0xE5), byte(0x21), byte(0x51), byte(0x2E), byte(0x34), byte(0x21), byte(0x2B), byte(0x10),
+	byte(0x04), byte(0x93), byte(0x91), byte(0x73), byte(0xCB), byte(0x00), byte(0x83), byte(0x68),
+	byte(0x0C), byte(0x43), byte(0x53), byte(0x20), byte(0x56), byte(0x34), byte(0x35), byte(0x32),
+	byte(0x0B), byte(0xC8), byte(0x84), byte(0xC4), byte(0xB0), byte(0x83), byte(0x54), byte(0x4C),
+	byte(0x48), byte(0x8E), byte(0x50), byte(0xF2), byte(0xC4), byte(0xD8), byte(0x41), byte(0x0A),
+	byte(0xB0), byte(0x04), byte(0xD3), byte(0x11), byte(0x18), byte(0x51), byte(0x20), byte(0xD1),
+	byte(0xA3), byte(0x11), byte(0x30), byte(0x08), byte(0x2E), byte(0x83), byte(0x45), byte(0x39),
+	byte(0x13), byte(0x00), byte(0x4C), byte(0x83), byte(0x8D), byte(0xB4), byte(0xE4), byte(0xC7),
+	byte(0x20), byte(0xD1), byte(0xA0), byte(0x35), byte(0x84), byte(0xC7), byte(0x20), byte(0xD1),
+	byte(0xA4), byte(0x54), byte(0x44), byte(0x58), byte(0x4C), byte(0x72), byte(0x0D), byte(0x1A),
+	byte(0x01), byte(0x8E), byte(0xAC), byte(0x40), byte(0x03), byte(0xC8), byte(0xE3), byte(0x04),
+	byte(0x4C), byte(0x83), byte(0x04), byte(0x4B), byte(0x43), byte(0x43), byte(0x11), byte(0x14),
+	byte(0x93), byte(0x00), byte(0xD0), byte(0xF6), byte(0x1C), byte(0x44), byte(0xC7), byte(0x11),
+	byte(0x1B), byte(0x40), byte(0x4D), byte(0x44), byte(0x44), byte(0xCC), byte(0xE1), byte(0x84),
+	byte(0x4C), byte(0x71), byte(0x11), byte(0x94), byte(0xE2), byte(0xCB), byte(0x39), byte(0x6B),
+	byte(0xC0), byte(0x44), byte(0x43), byte(0x53), byte(0xC9), byte(0x33), byte(0x8F), byte(0xA0),
+	byte(0xD0), byte(0xC4), byte(0x10), byte(0x38), byte(0xC8), byte(0x14), byte(0x52), byte(0x02),
+	byte(0x50), byte(0xB4), byte(0xEF), byte(0x50), byte(0x12), byte(0xC8), byte(0x0A), byte(0x02),
+	byte(0xD1), byte(0x10), byte(0x00), byte(0xD8), byte(0xC8), byte(0xF1), byte(0x00), byte(0x2A),
+	byte(0xC0), byte(0x08), byte(0x35), byte(0x30), byte(0x08), byte(0x37), byte(0x11), byte(0x0C),
+	byte(0x00), byte(0x83), byte(0x67), byte(0x10), byte(0x04), byte(0x60), byte(0x2C), byte(0xB3),
+	byte(0x96), byte(0xB0), byte(0x40), byte(0xC8), byte(0x02), byte(0xE1), byte(0x45), byte(0x20),
+	byte(0x21), byte(0x21), byte(0x10), byte(0xD1), byte(0x05), byte(0x21), byte(0x38), byte(0xCE),
+	byte(0x39), byte(0x19), byte(0xD4), byte(0x1A), byte(0xF1), byte(0x11), byte(0x48), byte(0xE3),
+	byte(0x6B), byte(0x01), byte(0x31), byte(0x11), byte(0x8D), byte(0x44), byte(0x48), byte(0x34),
+	byte(0x6D), byte(0x80), byte(0x46), byte(0x72), byte(0x12), byte(0x4C), byte(0xE4), byte(0x58),
+	byte(0x81), byte(0x11), byte(0x94), byte(0x13), byte(0x62), byte(0x13), byte(0x1C), byte(0x83),
+	byte(0x72), byte(0x11), byte(0x38), byte(0x11), byte(0x4C), byte(0x80), byte(0x8B), byte(0x13),
+	byte(0x24), byte(0xC0), byte(0x4C), byte(0x83), byte(0x8D), byte(0xB0), byte(0xE4), byte(0x4D),
+	byte(0x20), byte(0xD1), byte(0xB6), byte(0x00), byte(0xB2), byte(0xA4), byte(0x54), byte(0x43),
+	byte(0x53), byte(0xD8), byte(0x83), byte(0x62), byte(0x1C), byte(0xE3), byte(0x92), byte(0x12),
+	byte(0x11), byte(0x07), byte(0x01), byte(0x52), byte(0x0E), byte(0x47), byte(0x21), byte(0xCE),
+	byte(0x39), byte(0x39), byte(0x48), byte(0x44), byte(0x49), byte(0x4E), byte(0x38), byte(0x3C),
+	byte(0xC8), byte(0x4C), byte(0xB1), byte(0x20), byte(0x44), byte(0xE5), byte(0x0D), byte(0x0E),
+	byte(0x02), byte(0x11), byte(0xCC), byte(0x40), byte(0x02), byte(0x1C), byte(0x44), byte(0x66),
+	byte(0x00), byte(0xFC), byte(0x94), byte(0x04), byte(0x91), byte(0x02), byte(0x4E), byte(0x43),
+	byte(0x4E), byte(0x50), byte(0x61), byte(0xEF), byte(0x44), byte(0xE5), byte(0x44), byte(0x80),
+	byte(0x24), byte(0x4E), byte(0x49), byte(0x28), byte(0x0B), byte(0x4C), byte(0x73), byte(0x94),
+	byte(0x18), byte(0x79), byte(0xC4), byte(0x00), byte(0x39), byte(0x4E), byte(0x39), byte(0x3C),
+	byte(0x84), byte(0x08), byte(0xE3), byte(0x43), byte(0x84), byte(0xE6), byte(0x2C), byte(0x00),
+	byte(0x83), byte(0x6B), byte(0x20), byte(0x48), byte(0x01), byte(0x2C), byte(0x48), byte(0x88),
+	byte(0x54), byte(0x82), byte(0xF3), byte(0x00), byte(0x12), byte(0xC4), byte(0xAC), byte(0xE5),
+	byte(0x44), byte(0xBD), byte(0x13), byte(0x82), byte(0x11), byte(0x24), byte(0xAE), byte(0x14),
+	byte(0x51), byte(0x11), byte(0xC9), byte(0x35), byte(0x03), byte(0x10), byte(0xD4), byte(0xE2),
+	byte(0x38), byte(0xD4), byte(0x88), byte(0x0C), byte(0x44), byte(0x60), byte(0x3C), byte(0xF1),
+	byte(0x00), byte(0x47), byte(0x24), byte(0xD4), byte(0x0D), byte(0x88), byte(0x54), byte(0x62),
+	byte(0xD1), byte(0x00), byte(0x44), byte(0xB6), byte(0x27), byte(0x50), byte(0xC0), byte(0x0D),
+	byte(0x91), byte(0x52), byte(0x03), byte(0x10), byte(0xD0), byte(0x84), byte(0xCC), byte(0x45),
+	byte(0xD3), byte(0xB0), byte(0x44), byte(0xC7), byte(0x38), byte(0x3A), byte(0x0D), byte(0x08),
+	byte(0xB5), byte(0x03), byte(0x20), byte(0xD1), byte(0xB2), byte(0x10), byte(0xD0), byte(0xF1),
+	byte(0x10), byte(0x02), byte(0xC8), byte(0x64), byte(0x4C), byte(0x84), byte(0x35), byte(0x21),
+	byte(0x21), byte(0x50), byte(0x82), byte(0xC3), byte(0x88), byte(0xE3), byte(0x53), byte(0x44),
+	byte(0xE2), byte(0xE0), byte(0x50), byte(0x32), byte(0x04), byte(0x34), byte(0x21), byte(0x32),
+	byte(0x11), byte(0x51), byte(0x11), byte(0x00), byte(0xB8), byte(0x94), byte(0x4E), byte(0x23),
+	byte(0x8B), byte(0x2C), byte(0x41), byte(0x84), byte(0xA0), byte(0xD4), byte(0xC4), byte(0x44),
+	byte(0x44), byte(0x93), byte(0xC9), byte(0x40), byte(0x82), byte(0x11), byte(0x24), byte(0xB2),
+	byte(0x3C), byte(0x40), byte(0x88), byte(0x00), byte(0xBC), byte(0x48), byte(0x48), byte(0xA9),
+	byte(0x17), byte(0x3C), byte(0x44), byte(0x48), byte(0x10), byte(0xD0), byte(0x84), byte(0x84),
+	byte(0x41), byte(0xC8), byte(0x34), byte(0x38), byte(0x44), byte(0x4D), byte(0x31), byte(0x11),
+	byte(0xC4), byte(0x44), byte(0x94), byte(0x2D), byte(0x3C), byte(0xD1), byte(0x10), byte(0x04),
+	byte(0xF2), byte(0x21), byte(0x7C), byte(0x44), byte(0x2C), byte(0x04), byte(0xC8), byte(0x38),
+	byte(0xD4), byte(0x87), byte(0x20), byte(0xF8), byte(0x0D), byte(0x20), byte(0xC0), byte(0x0B),
+	byte(0xA0), byte(0xC3), byte(0xD1), byte(0x39), byte(0x51), byte(0x27), byte(0x00), byte(0x84),
+	byte(0x72), byte(0x4C), byte(0x06), byte(0x33), byte(0x38), byte(0xFC), byte(0x44), byte(0x0D),
+	byte(0x40), byte(0x84), byte(0xBC), byte(0x44), byte(0x47), byte(0x00), byte(0xF4), byte(0xAB),
+	byte(0x01), byte(0x31), byte(0x36), byte(0x44), byte(0x84), byte(0xC4), byte(0x46), byte(0xF2),
+	byte(0x02), byte(0x2A), byte(0x42), byte(0xD2), byte(0x13), byte(0x22), byte(0x06), byte(0x34),
+	byte(0x81), byte(0x48), byte(0x08), byte(0x03), byte(0x53), byte(0x88), byte(0x70), byte(0x0D),
+	byte(0x08), byte(0x49), byte(0xCE), byte(0x4C), byte(0x42), byte(0xE6), byte(0x10), byte(0xD1),
+	byte(0x11), byte(0x00), byte(0xBC), byte(0x4E), byte(0x08), byte(0xAC), byte(0x44), byte(0x41),
+	byte(0x42), byte(0x11), byte(0x12), byte(0x02), byte(0xCE), byte(0x34), byte(0x69), byte(0x48),
+	byte(0x4F), byte(0x31), byte(0xC4), byte(0x31), byte(0x21), byte(0x0B), byte(0x54), byte(0x44),
+	byte(0xB1), byte(0x10), byte(0xF3), byte(0x91), byte(0x4E), byte(0x23), byte(0x8D), byte(0x0C),
+	byte(0x84), byte(0xC8), byte(0x38), byte(0xDC), byte(0x44), byte(0x00), byte(0x21), byte(0xF3),
+	byte(0x45), byte(0x44), byte(0xC7), byte(0x90), byte(0x51), byte(0x4E), byte(0x45), byte(0x38),
+	byte(0xC4), byte(0x08), byte(0x80), byte(0xC4), byte(0xC4), byte(0x04), byte(0xC4), byte(0x90),
+	byte(0x35), byte(0x02), byte(0x01), byte(0x32), byte(0x0E), byte(0x36), byte(0x53), byte(0x91),
+	byte(0x08), byte(0x49), byte(0x80), byte(0x44), byte(0x31), byte(0x0D), byte(0x8D), byte(0x15),
+	byte(0x06), byte(0xAC), byte(0x40), byte(0x03), byte(0x11), byte(0x1D), byte(0x4E), byte(0x20),
+	byte(0x21), byte(0x30), byte(0x50), byte(0x84), byte(0xC4), byte(0xD8), byte(0x73), byte(0x8B),
+	byte(0x13), byte(0x21), byte(0x04), byte(0x32), byte(0xC2), byte(0x0D), byte(0x0E), byte(0x52),
+	byte(0x0D), byte(0x00), byte(0xB2), byte(0xD8), byte(0xC8), byte(0x84), byte(0x71), byte(0x11),
+	byte(0x35), byte(0x11), byte(0x36), byte(0x54), byte(0x44), byte(0x13), byte(0x24), byte(0xCE),
+	byte(0x45), byte(0x8C), byte(0x44), byte(0x48), byte(0xF3), byte(0x8D), byte(0x0E), byte(0xF5),
+	byte(0x12), byte(0x1E), byte(0x00), byte(0x82), byte(0x39), byte(0x10), byte(0xC8), byte(0x34),
+	byte(0x68), byte(0x51), byte(0x39), byte(0x31), byte(0xC4), byte(0x46), byte(0xB1), byte(0x00),
+	byte(0x44), byte(0xDC), byte(0x8E), byte(0x36), byte(0x73), byte(0x8F), byte(0x12), byte(0x31),
+	byte(0x15), byte(0x10), byte(0xB3), byte(0x8F), byte(0x94), byte(0x41), byte(0x0B), byte(0x20),
+	byte(0xD1), byte(0xB1), byte(0x10), byte(0x00), byte(0xE2), byte(0x01), byte(0x14), byte(0x58),
+	byte(0x8C), byte(0x84), byte(0x84), byte(0x01), byte(0x21), byte(0x31), byte(0x38), byte(0x00),
+	byte(0xF5), byte(0x01), byte(0x12), byte(0x0E), byte(0x51), byte(0x28), byte(0x40), byte(0x2C),
+	byte(0xB8), byte(0x80), byte(0x48), byte(0x4B), byte(0x8F), byte(0x11), byte(0x10), byte(0x13),
+	byte(0x20), byte(0xE3), byte(0x62), byte(0x2C), byte(0xE4), byte(0x84), byte(0xD4), byte(0x84),
+	byte(0x88), byte(0x4F), byte(0x11), byte(0x02), byte(0x10), byte(0x85), byte(0x44), byte(0x85),
+	byte(0x42), byte(0x0B), byte(0x0C), byte(0x83), byte(0x46), byte(0xD4), byte(0x02), byte(0xD4),
+	byte(0x13), byte(0x11), byte(0x12), byte(0x10), byte(0x04), byte(0x42), byte(0x1E), byte(0x55),
+	byte(0x0B), byte(0x2E), byte(0xC3), byte(0x83), byte(0x10), byte(0xBA), byte(0x4E), byte(0x20),
+	byte(0xDC), byte(0x84), byte(0x01), byte(0x23), byte(0x8D), byte(0xCC), byte(0x05), byte(0xE3),
+	byte(0x21), byte(0x11), byte(0x02), byte(0x4C), byte(0xE4), byte(0x6F), byte(0x39), byte(0x22),
+	byte(0x13), byte(0x20), byte(0xE3), byte(0x6F), byte(0x2C), byte(0x06), byte(0x04), byte(0x47),
+	byte(0x23), byte(0xCE), byte(0x45), byte(0x39), byte(0x11), byte(0x44), byte(0xE4), byte(0x71),
+	byte(0x10), byte(0x23), byte(0x91), byte(0x0F), byte(0x13), byte(0x96), byte(0x8C), byte(0x04),
+	byte(0xC0), byte(0xBC), byte(0x03), byte(0xC4), byte(0x47), byte(0x31), byte(0xC4), byte(0x39),
+	byte(0x16), byte(0x32), byte(0x3C), byte(0x00), byte(0x84), byte(0x91), byte(0x51), byte(0x11),
+	byte(0x62), byte(0x53), byte(0x91), byte(0x33), byte(0x25), byte(0x0F), byte(0x3C), byte(0xE4),
+	byte(0x53), byte(0x80), byte(0x24), byte(0xC8), byte(0x38), byte(0xDB), byte(0x85), byte(0x14),
+	byte(0x80), byte(0x88), byte(0x00), byte(0xBD), byte(0x87), byte(0x39), byte(0x21), byte(0x28),
+	byte(0x0C), byte(0x40), byte(0x27), byte(0x00), byte(0xF3), byte(0xD8), byte(0x9C), byte(0x40),
+	byte(0x11), byte(0x4E), byte(0x11), byte(0x12), byte(0x4F), byte(0x31), byte(0x00), byte(0x32),
+	byte(0xF4), byte(0x4E), byte(0x24), byte(0x40), byte(0x93), byte(0x9C), byte(0x84), byte(0xE1),
+	byte(0x01), byte(0x21), byte(0x31), byte(0x10), byte(0xF4), byte(0x44), byte(0x48), byte(0x43),
+	byte(0x53), byte(0xCC), byte(0xE5), byte(0x8D), byte(0xBD), byte(0x42), byte(0xCB), byte(0x85),
+	byte(0x44), byte(0xAC), byte(0x00), byte(0xF8), byte(0xD1), byte(0x62), byte(0xC3), byte(0x8C),
+	byte(0x88), byte(0x04), byte(0xE3), byte(0x00), byte(0x3C), byte(0x4E), byte(0x38), byte(0xCC),
+	byte(0x8C), byte(0x20), byte(0xB1), byte(0x25), byte(0x20), byte(0x42), byte(0xC3), byte(0xA0),
+	byte(0xC3), byte(0xC0), byte(0x09), byte(0x39), byte(0x54), byte(0x34), byte(0x3A), byte(0xC0),
+	byte(0x44), byte(0x61), byte(0x23), byte(0x38), byte(0x69), byte(0xD4), byte(0x18), byte(0x4B),
+	byte(0xD1), byte(0x10), byte(0xF0), byte(0x11), byte(0x12), byte(0x43), byte(0x55), byte(0x21),
+	byte(0x13), byte(0x8D), byte(0x30), byte(0x43), byte(0x53), byte(0x00), byte(0xBB), byte(0xD1),
+	byte(0x38), byte(0x35), byte(0x02), byte(0x12), byte(0x71), byte(0x11), byte(0x48), byte(0x42),
+	byte(0xC5), byte(0xCC), byte(0x40), byte(0x02), byte(0x1E), byte(0xE2), byte(0x0B), byte(0xC9),
+	byte(0x40), byte(0x87), byte(0xC8), byte(0x84), byte(0xD4), byte(0x01), byte(0x32), byte(0x0E),
+	byte(0x37), byte(0x32), byte(0x04), byte(0x88), byte(0xE4), byte(0x93), byte(0xA0), byte(0xD0),
+	byte(0xD4), byte(0x49), byte(0x34), byte(0x58), byte(0xC8), byte(0xA2), byte(0x0D), byte(0xC9),
+	byte(0x34), byte(0x44), byte(0x11), byte(0x3A), byte(0x0C), byte(0x00), byte(0x61), byte(0x28),
+	byte(0x4D), byte(0x21), byte(0x0B), byte(0x16), byte(0xF1), byte(0xCE), byte(0x34), byte(0x4B),
+	byte(0xD1), byte(0x20), byte(0x21), byte(0x36), byte(0x10), byte(0x04), byte(0x6C), byte(0x39),
+	byte(0x24), byte(0xF2), byte(0x50), byte(0xDC), byte(0x8E), byte(0x38), byte(0xD8), byte(0x8B),
+	byte(0x10), byte(0x04), byte(0x6F), byte(0x44), byte(0x00), byte(0x93), byte(0x20), byte(0x21),
+	byte(0x2F), byte(0x20), byte(0x40), byte(0x84), byte(0xD8), byte(0x02), byte(0x13), byte(0xC4),
+	byte(0x40), byte(0x84), byte(0x35), byte(0x3A), byte(0x0C), byte(0x3C), byte(0xE4), byte(0x53),
+	byte(0x00), byte(0xD4), byte(0xEF), byte(0x44), byte(0xE0), byte(0xD4), byte(0x09), byte(0x3A),
+	byte(0xC4), byte(0x15), byte(0x3D), byte(0x80), byte(0x2C), byte(0xBC), byte(0x84), byte(0x44),
+	byte(0x81), byte(0x12), byte(0xB4), byte(0x45), byte(0x92), byte(0xC8), byte(0x70), byte(0x11),
+	byte(0x12), byte(0xC3), byte(0x95), byte(0x20), byte(0x4A), byte(0x88), byte(0x0E), byte(0xD3),
+	byte(0x91), byte(0xC8), byte(0x83), byte(0x0F), byte(0x2D), byte(0x8D), byte(0x88), byte(0x14),
+	byte(0x4B), byte(0x8D), byte(0x4C), byte(0xE8), byte(0x80), byte(0x4C), byte(0x21), byte(0xEC),
+	byte(0x61), byte(0x21), byte(0x0B), byte(0x16), byte(0x52), byte(0x0D), byte(0x12), byte(0x23),
+	byte(0x8C), byte(0x3D), byte(0x44), byte(0xC4), byte(0x47), byte(0x23), byte(0x8D), byte(0x1A),
+	byte(0x04), byte(0xD3), byte(0x10), byte(0xD4), byte(0xC8), byte(0x38), byte(0xD8), byte(0xD1),
+	byte(0x01), byte(0x69), byte(0x48), byte(0x2C), byte(0xCC), byte(0x44), byte(0x3D), byte(0x40),
+	byte(0x4B), byte(0x20), byte(0x20), byte(0x0D), byte(0xC8), byte(0x40), byte(0x94), byte(0x44),
+	byte(0x84), byte(0xD8), byte(0xC8), byte(0x23), byte(0x91), byte(0x13), byte(0x31), byte(0x12),
+	byte(0x4F), byte(0x24), byte(0xCE), byte(0x08), byte(0xAB), byte(0xCE), byte(0x48), byte(0x84),
+	byte(0xC8), byte(0x54), byte(0x48), byte(0x80), byte(0x51), byte(0x21), byte(0x22), byte(0x10),
+	byte(0xD4), byte(0xD4), byte(0x45), byte(0x8D), byte(0x88), byte(0x34), byte(0x33), byte(0x96),
+	byte(0xB0), byte(0x43), byte(0x0E), byte(0x45), byte(0x89), byte(0x17), byte(0x21), byte(0x24),
+	byte(0xEB), byte(0x21), byte(0x24), byte(0xC4), byte(0x37), byte(0x24), byte(0xD1), byte(0x00),
+	byte(0x81), byte(0x87), byte(0x4E), byte(0x25), byte(0x0B), byte(0x4D), byte(0x44), byte(0x44),
+	byte(0x84), byte(0x82), byte(0xCB), byte(0x20), byte(0xE3), byte(0x65), byte(0x39), byte(0x13),
+	byte(0x04), byte(0x46), byte(0x31), byte(0x02), byte(0x21), byte(0x22), byte(0x0E), byte(0x36),
+	byte(0x43), byte(0x44), byte(0x44), byte(0x66), byte(0x2C), byte(0x39), byte(0x51), byte(0x32),
+	byte(0x50), byte(0xC3), byte(0x04), byte(0x47), byte(0x63), byte(0x8D), byte(0x0C), byte(0x44),
+	byte(0x71), byte(0x10), byte(0xB0), byte(0x13), byte(0x12), byte(0x05), byte(0x40), byte(0x20),
+	byte(0xB0), byte(0x01), byte(0x2C), byte(0x4A), byte(0xC8), byte(0x34), byte(0x4A), byte(0xC8),
+	byte(0x28), byte(0x42), byte(0xD8), byte(0xB9), byte(0x44), byte(0xD2), byte(0x20), byte(0x31),
+	byte(0x32), byte(0x1C), byte(0xE4), byte(0xF2), byte(0x1C), byte(0xE4), byte(0x53), byte(0x88),
+	byte(0xE5), byte(0x0D), byte(0x4D), byte(0x16), byte(0x31), byte(0x38), byte(0xB1), byte(0x20),
+	byte(0x44), byte(0x40), byte(0x32), byte(0x20), byte(0xD1), byte(0x8B), byte(0x13), byte(0x15),
+	byte(0x0B), byte(0x12), byte(0x30), byte(0x14), byte(0x18), byte(0x74), byte(0xC4), byte(0x46),
+	byte(0xC0), byte(0x11), byte(0x28), byte(0x44), byte(0xE8), byte(0x34), byte(0x32), byte(0x02),
+	byte(0x01), byte(0x31), byte(0x2F), byte(0x44), byte(0x44), byte(0x84), byte(0x35), byte(0x3A),
+	byte(0xC0), byte(0x34), byte(0x38), byte(0x80), byte(0x30), byte(0xF0), byte(0x08), byte(0x18),
+	byte(0xDB), byte(0x00), byte(0x4C), byte(0x44), byte(0x48), byte(0x00), byte(0xBB), byte(0xCE),
+	byte(0x3D), byte(0x42), byte(0xC0), byte(0x4C), byte(0x83), byte(0x8D), byte(0x90), byte(0x23),
+	byte(0x8D), byte(0x38), byte(0xC6), byte(0x2C), byte(0x10), byte(0x32), byte(0x02), byte(0x00),
+	byte(0xB9), byte(0xCE), byte(0x48), byte(0xF2), byte(0x13), byte(0x00), byte(0xB8), byte(0x87),
+	byte(0x51), byte(0x10), byte(0x87), byte(0x99), byte(0x13), byte(0x94), byte(0x34), byte(0x3C),
+	byte(0xC7), byte(0x39), byte(0x44), byte(0x80), byte(0x34), byte(0x38), byte(0x14), byte(0x4C),
+	byte(0x73), byte(0x91), byte(0x21), byte(0x36), byte(0x28), byte(0x35), byte(0x24), byte(0xC4),
+	byte(0x00), byte(0x3C), byte(0x44), byte(0x08), byte(0x43), byte(0x53), byte(0x2D), byte(0x89),
+	byte(0x54), byte(0x4D), byte(0x44), byte(0x44), byte(0xD9), byte(0x13), byte(0x8D), byte(0x1A),
+	byte(0x83), byte(0x55), byte(0x38), byte(0xB5), byte(0x44), byte(0xAC), byte(0x81), byte(0x44),
+	byte(0x9C), byte(0x42), byte(0x06), byte(0x1D), byte(0x3A), byte(0x0D), byte(0x09), byte(0x11),
+	byte(0x00), byte(0x48), byte(0x4C), byte(0x48), byte(0x18), byte(0x74), byte(0xE1), byte(0x00),
+	byte(0xD2), byte(0xA2), byte(0x50), byte(0xB4), byte(0xD4), byte(0x44), byte(0x02), byte(0xE2),
+	byte(0x11), byte(0x14), byte(0xC0), byte(0x20), byte(0xD2), byte(0xD8), byte(0xD8), byte(0x44),
+	byte(0x93), byte(0x91), byte(0x71), byte(0x02), byte(0x51), byte(0x32), byte(0x15), byte(0x12),
+	byte(0x13), byte(0x80), byte(0x44), byte(0x3C), byte(0x84), byte(0x10), byte(0xAA), byte(0xCE),
+	byte(0x34), byte(0x6B), byte(0x85), byte(0x14), byte(0x80), byte(0x84), byte(0x47), byte(0x24),
+	byte(0xC0), byte(0x4C), byte(0x43), byte(0x04), byte(0x35), byte(0x3C), byte(0x44), byte(0x49),
+	byte(0x38), byte(0x40), byte(0x62), byte(0x31), byte(0x00), byte(0x2F), byte(0x63), byte(0x91),
+	byte(0x28), byte(0x44), byte(0x71), byte(0x11), byte(0x23), byte(0x94), byte(0x44), byte(0x21),
+	byte(0x33), byte(0x1D), byte(0x13), byte(0x96), byte(0x94), byte(0xE4), byte(0x56), byte(0x01),
+	byte(0x10), byte(0xEF), byte(0x38), byte(0xB2), byte(0x02), byte(0x63), byte(0x20), byte(0x88),
+	byte(0x10), byte(0xD0), byte(0x84), byte(0x91), byte(0x81), byte(0x12), byte(0x84), byte(0x40),
+	byte(0xE8), byte(0x4C), byte(0x43), byte(0x36), byte(0x10), byte(0x03), byte(0xCE), byte(0x36),
+	byte(0x52), byte(0x0B), byte(0x2E), byte(0xF2), byte(0xC0), byte(0x36), byte(0xC2), byte(0x0B),
+	byte(0x21), byte(0x30), byte(0x11), byte(0x62), byte(0x65), byte(0x0D), byte(0x9C), byte(0xE4),
+	byte(0xE7), byte(0x10), byte(0x04), byte(0xE0), byte(0x0C), byte(0x34), byte(0x44), byte(0x49),
+	byte(0x28), byte(0x8E), byte(0x2C), byte(0x39), byte(0x4E), byte(0x09), byte(0x44), byte(0xA5),
+	byte(0x39), byte(0x11), byte(0x08), byte(0x18), byte(0xDC), byte(0xD1), byte(0x10), byte(0x04),
+	byte(0xCC), byte(0x10), byte(0xD4), byte(0xE1), byte(0x2C), byte(0xE3), byte(0x83), byte(0xD0),
+	byte(0xF3), byte(0x8D), byte(0x88), byte(0xE5), byte(0x11), byte(0x48), byte(0x4C), byte(0xC7),
+	byte(0x21), byte(0x10), byte(0xF6), byte(0x01), byte(0x30), byte(0x87), byte(0x80), byte(0x51),
+	byte(0x44), byte(0x09), byte(0x39), byte(0x00), byte(0x44), byte(0xB6), byte(0x32), byte(0x4C),
+	byte(0xE4), byte(0x44), byte(0xCC), byte(0x75), byte(0x12), byte(0xC8), byte(0xE5), byte(0x0D),
+	byte(0x0E), byte(0x45), byte(0x44), byte(0x45), byte(0x85), byte(0x87), byte(0x11), byte(0x11),
+	byte(0x21), byte(0x00), byte(0x16), byte(0x20), byte(0x0C), byte(0xC2), byte(0x0D), byte(0x21),
+	byte(0x24), byte(0xD1), byte(0x01), byte(0x32), byte(0x0E), byte(0x36), byte(0xC3), byte(0x94),
+	byte(0x4C), byte(0x7B), byte(0xC0), byte(0x18), byte(0x49), byte(0x0D), byte(0x4C), byte(0x44),
+	byte(0x6F), byte(0x44), byte(0xE0), byte(0x40), byte(0x04), byte(0xB6), byte(0x2F), byte(0x38),
+	byte(0x83), byte(0x53), byte(0xC8), byte(0x40), byte(0x13), byte(0xB4), byte(0x04), byte(0xD4),
+	byte(0x44), byte(0x02), byte(0xF1), byte(0x00), byte(0x21), byte(0x25), byte(0x01), byte(0x18),
+	byte(0x87), byte(0x00), byte(0xB2), byte(0xC4), byte(0x34), byte(0x61), byte(0x2F), byte(0x01),
+	byte(0x24), byte(0xA0), byte(0x3C), byte(0xF2), byte(0xD8), byte(0xB0), byte(0x02), byte(0x0B),
+	byte(0xD1), byte(0x25), byte(0x00), byte(0x2C), byte(0xB6), byte(0x2C), byte(0x21), byte(0x7C),
+	byte(0xCE), byte(0x50), byte(0x61), byte(0xE2), byte(0x2C), byte(0x40), byte(0x11), byte(0x2D),
+	byte(0x89), byte(0x91), byte(0x39), byte(0x69), byte(0x40), byte(0x09), byte(0x33), byte(0x91),
+	byte(0xC9), byte(0x30), byte(0x13), byte(0x12), byte(0xB3), byte(0x82), byte(0x00), byte(0xB9),
+	byte(0x94), byte(0x62), byte(0x40), byte(0x12), byte(0x4F), byte(0x20), byte(0x15), byte(0x13),
+	byte(0x23), byte(0x94), byte(0x4C), byte(0x7C), byte(0x82), byte(0x10), byte(0xD1), byte(0x2C),
+	byte(0x39), byte(0x31), byte(0xC4), byte(0x46), byte(0x20), byte(0x11), byte(0x10), byte(0x44),
+	byte(0x70), byte(0x50), byte(0x80), byte(0x8A), byte(0x2D), byte(0x88), byte(0x84), byte(0x35),
+	byte(0x34), byte(0x40), byte(0x2E), byte(0x50), byte(0x02), byte(0x12), byte(0x80), byte(0x84),
+	byte(0x80), byte(0x13), byte(0x95), byte(0x12), byte(0x11), byte(0x18), byte(0x38), byte(0xD0),
+	byte(0xEF), byte(0x20), byte(0x24), byte(0xD4), byte(0x44), byte(0x4B), byte(0x44), byte(0x4D),
+	byte(0x63), byte(0x91), byte(0x2A), byte(0xC0), byte(0x0D), byte(0x00), byte(0x61), byte(0x0C),
+	byte(0x10), byte(0xD4), byte(0xE8), byte(0x34), byte(0x32), byte(0x15), byte(0x20), byte(0x35),
+	byte(0x00), byte(0x2E), byte(0x50), byte(0x0D), byte(0xC8), byte(0x86), byte(0x44), byte(0xC8),
+	byte(0xF1), byte(0x04), byte(0x0E), byte(0x15), byte(0x12), byte(0x63), byte(0x21), byte(0x11),
+	byte(0x20), byte(0xE5), byte(0x12), byte(0xB8), byte(0x20), byte(0x94), byte(0x46), byte(0x00),
+	byte(0xC3), byte(0xC4), byte(0x40), byte(0x03), byte(0x63), byte(0x22), byte(0x06), byte(0x36),
+	byte(0x23), byte(0x8B), byte(0x2C), byte(0x40), byte(0x93), byte(0x20), byte(0xE3), byte(0x6B),
+	byte(0x21), byte(0x24), byte(0xE0), byte(0x3C), byte(0xF4), byte(0x4E), byte(0x00), byte(0x21),
+	byte(0xE2), byte(0x1C), byte(0x04), byte(0x46), byte(0x13), byte(0x05), byte(0x00), byte(0x2C),
+	byte(0x84), byte(0xD8), byte(0xBD), byte(0x11), byte(0x12), byte(0x49), byte(0x44), byte(0x44),
+	byte(0xD4), byte(0xE4), byte(0xC4), byte(0xB4), byte(0xE4), byte(0xC4), byte(0xBC), byte(0x04),
+	byte(0x53), byte(0xC4), byte(0x40), byte(0x0B), byte(0xD8), byte(0x40), byte(0x62), byte(0x51),
+	byte(0x14), byte(0x44), byte(0x35), byte(0x38), byte(0xC4), byte(0x4C), byte(0x44), byte(0x4C),
+	byte(0x20), byte(0xD1), byte(0x33), byte(0x45), byte(0x41), byte(0x32), byte(0x00), byte(0x3D),
+	byte(0x87), byte(0x01), byte(0x31), byte(0x15), byte(0x11), byte(0x18), byte(0x51), byte(0x10),
+	byte(0x02), byte(0xB6), byte(0x39), byte(0x14), byte(0x58), byte(0x89), byte(0x43), byte(0xEF),
+	byte(0x01), byte(0x14), byte(0xC8), byte(0x09), byte(0x42), byte(0xC0), byte(0x44), byte(0xB6),
+	byte(0x20), byte(0x30), byte(0xE5), byte(0x0D), byte(0x4E), byte(0x00), byte(0x48), byte(0x2C),
+	byte(0x84), byte(0xD8), byte(0x90), byte(0x04), byte(0xF1), byte(0x10), byte(0x23), byte(0x86),
+	byte(0x34), byte(0x86), byte(0x44), byte(0xC8), byte(0x84), byte(0xE2), byte(0x1C), byte(0x04),
+	byte(0x40), byte(0x09), byte(0x31), byte(0x11), byte(0xC8), byte(0xE3), byte(0x04), byte(0x04),
+	byte(0xE0), byte(0xD8), byte(0xAC), byte(0xE4), byte(0x92), byte(0x8C), byte(0x41), byte(0x91),
+	byte(0x10), byte(0x49), byte(0x05), byte(0x14), byte(0x40), byte(0x93), byte(0x81), byte(0x34),
+	byte(0xC0), byte(0x08), byte(0xAC), byte(0x93), byte(0x00), byte(0x51), byte(0x6C), byte(0x20),
+	byte(0x30), byte(0xCB), byte(0x13), byte(0x31), byte(0x0B), byte(0x11), byte(0x52), byte(0x12),
+	byte(0x20), byte(0xE3), byte(0x76), byte(0x1D), byte(0x8A), byte(0xC4), byte(0x18), byte(0x02),
+	byte(0xE2), byte(0x00), byte(0xF2), byte(0x13), byte(0x00), byte(0xBC), byte(0xD1), byte(0x00),
+	byte(0x31), byte(0x24), byte(0x2C), byte(0x40), byte(0x93), byte(0x20), byte(0xE3), byte(0x64),
+	byte(0x54), byte(0x44), byte(0x58), byte(0x04), byte(0xE0), byte(0xD8), byte(0x8D), byte(0x13),
+	byte(0x8F), byte(0xB0), byte(0x02), byte(0x4E), byte(0x47), byte(0x52), byte(0x04), byte(0x5B),
+	byte(0x24), byte(0xC0), byte(0x34), byte(0x30), byte(0x11), byte(0x0E), byte(0x12), byte(0x0B),
+	byte(0x2E), byte(0x43), byte(0x0F), byte(0x2C), byte(0xE6), byte(0x04), byte(0x12), byte(0x32),
+	byte(0x12), byte(0x09), byte(0x44), byte(0x92), byte(0x20), byte(0xE3), byte(0x6E), byte(0x3C),
+	byte(0xF3), byte(0x91), byte(0x4D), byte(0x43), byte(0x48), byte(0x4D), byte(0x88), byte(0x0D),
+	byte(0x00), byte(0xB6), byte(0x12), byte(0x21), byte(0x2C), byte(0xC4), byte(0x37), byte(0x25),
+	byte(0x06), byte(0x18), byte(0x44), byte(0x93), byte(0xAC), byte(0x05), byte(0x98), byte(0x11),
+	byte(0x19), byte(0xD4), byte(0x48), byte(0x10), byte(0x0D), byte(0x0F), byte(0x21), byte(0x02),
+	byte(0x4C), byte(0x83), byte(0x8D), byte(0x84), byte(0x40), byte(0x8E), byte(0x30), byte(0x4C),
+	byte(0x8A), byte(0x20), byte(0xB2), byte(0xF2), byte(0x21), byte(0x24), byte(0xC4), byte(0x47),
+	byte(0x24), byte(0xD8), byte(0x2C), byte(0x48), byte(0x91), byte(0x20), byte(0xC1), byte(0x2F),
+	byte(0x44), byte(0xE1), byte(0x91), byte(0x00), byte(0xC8), byte(0x8E), byte(0x30), byte(0xF0),
+	byte(0x11), byte(0x12), byte(0x20), byte(0x0F), byte(0xB0), byte(0x84), byte(0x92), byte(0x84),
+	byte(0x00), byte(0xF2), byte(0x39), byte(0x14), byte(0xF3), byte(0x44), byte(0x02), byte(0x0D),
+	byte(0x20), byte(0xD1), byte(0xA4), byte(0x01), byte(0x26), byte(0x2D), byte(0x10), byte(0x04),
+	byte(0x71), byte(0x10), byte(0x62), byte(0x0E), byte(0x37), byte(0x24), byte(0xD1), byte(0x01),
+	byte(0x31), byte(0x06), byte(0x62), byte(0xF5), byte(0x11), byte(0x3C), byte(0xE4), byte(0x84),
+	byte(0xBC), byte(0x44), byte(0x45), byte(0x39), byte(0x13), byte(0x33), byte(0x10), byte(0x21),
+	byte(0xCD), byte(0x38), byte(0xB3), byte(0x86), byte(0x62), byte(0x40), byte(0x8E), byte(0x34),
+	byte(0xE3), byte(0x08), byte(0x0A), byte(0x15), byte(0x03), byte(0x18), byte(0x44), byte(0xE4),
+	byte(0x5C), byte(0x03), byte(0x0F), byte(0x2C), byte(0x48), byte(0x87), byte(0x10), byte(0x22),
+	byte(0xA4), byte(0x35), byte(0x52), byte(0x11), byte(0x38), byte(0xD3), byte(0x04), byte(0x35),
+	byte(0x3A), byte(0xC4), byte(0x1A), byte(0x30), byte(0x11), byte(0x2B), byte(0x31), byte(0x11),
+	byte(0x33), byte(0x10), byte(0x13), byte(0x1C), byte(0x44), byte(0x6B), byte(0x01), byte(0x41),
+	byte(0x87), byte(0x99), byte(0x41), byte(0x12), byte(0x4A), byte(0x20), byte(0x11), byte(0xAC),
+	byte(0xE5), byte(0x84), byte(0x46), byte(0x70), byte(0x0D), byte(0x1A), byte(0xF0), byte(0x12),
+	byte(0x4F), byte(0x23), byte(0x82), byte(0x20), byte(0x02), byte(0xE5), byte(0x39), byte(0x11),
+	byte(0x84), byte(0x4E), byte(0x75), byte(0x0D), byte(0x0D), byte(0x11), byte(0x03), byte(0xC4),
+	byte(0x43), byte(0x0E), byte(0x54), byte(0x4B), byte(0x00), byte(0x34), byte(0x01), byte(0x84),
+	byte(0x46), byte(0x43), byte(0x49), byte(0x39), byte(0x89), byte(0x17), byte(0x00), byte(0x24),
+	byte(0xCB), byte(0x62), byte(0x32), byte(0x04), byte(0x94), byte(0x83), byte(0x40), byte(0x2E),
+	byte(0xC0), byte(0x18), byte(0x04), byte(0x49), byte(0xC4), byte(0x00), byte(0xB4), byte(0xC7),
+	byte(0x94), byte(0xB3), byte(0x8E), byte(0x46), byte(0x21), byte(0xC0), byte(0x34), byte(0x61),
+	byte(0x2B), byte(0x01), byte(0x8B), byte(0xCE), byte(0x39), byte(0x19), byte(0x54), byte(0x36),
+	byte(0x44), byte(0x93), byte(0x00), byte(0x12), byte(0xC8), byte(0x48), byte(0x7C), byte(0xD1),
+	byte(0x20), byte(0x02), byte(0xF2), byte(0x3D), byte(0x12), byte(0x0D), byte(0x1A), byte(0x32),
+	byte(0x0D), byte(0x34), byte(0x44), byte(0x61), byte(0x20), byte(0x6C), byte(0xC7), byte(0x00),
+	byte(0xD2), byte(0xAF), byte(0x44), byte(0xE4), byte(0xC4), byte(0x09), byte(0x38), byte(0x15),
+	byte(0x38), byte(0x80), byte(0xE8), byte(0x30), byte(0x01), byte(0x88), byte(0x34), byte(0x4C),
+	byte(0xCE), byte(0x34), byte(0x81), byte(0x87), byte(0x4F), byte(0x24), byte(0xC0), byte(0x46),
+	byte(0x04), byte(0x4C), byte(0x94), byte(0x83), byte(0x48), byte(0x48), byte(0x7B), byte(0x14),
+	byte(0x48), byte(0x80), byte(0xAE), byte(0x58), byte(0xD1), byte(0x11), byte(0x89), byte(0x16),
+	byte(0x20), byte(0x45), byte(0x3B), byte(0xD1), byte(0x21), byte(0x50), byte(0x13), byte(0x12),
+	byte(0xE4), byte(0xC7), byte(0x11), byte(0x14), byte(0xB2), byte(0x20), byte(0xC3), byte(0xCB),
+	byte(0x12), byte(0xF3), byte(0x8F), byte(0x50), byte(0xB0), byte(0x11), byte(0xC4), byte(0x41),
+	byte(0x4B), byte(0x10), byte(0x24), byte(0xE4), byte(0x48), byte(0xF1), byte(0x02), byte(0x20),
+	byte(0x02), byte(0xCB), byte(0x63), byte(0x23), byte(0x00), byte(0x2C), byte(0xBA), byte(0xC8),
+	byte(0x18), byte(0x74), byte(0xEC), byte(0x11), byte(0x24), byte(0x80), byte(0x18), byte(0x4C),
+	byte(0x93), byte(0x10), byte(0xFA), byte(0x84), byte(0x62), byte(0xF1), byte(0x00), byte(0x08),
+	byte(0x4B), byte(0xD1), byte(0x38), byte(0x64), byte(0x44), byte(0x49), byte(0x28), byte(0x40),
+	byte(0x37), byte(0x22), byte(0x03), byte(0x12), byte(0x64), byte(0x44), byte(0x01), byte(0x39),
+	byte(0x48), byte(0x5E), byte(0x83), byte(0x53), byte(0x11), byte(0x15), byte(0x48), byte(0x11),
+	byte(0x6B), byte(0x00), byte(0x34), byte(0x01), byte(0x84), byte(0xB4), byte(0x04), byte(0xC8),
+	byte(0x38), byte(0xD0), byte(0x0B), byte(0x94), byte(0x84), byte(0x87), byte(0xAC), byte(0xE4),
+	byte(0x84), byte(0x88), byte(0x03), byte(0x04), byte(0x44), byte(0x08), byte(0xC8), byte(0x48),
+	byte(0x25), byte(0x12), byte(0x4A), byte(0x44), byte(0x14), byte(0x00), byte(0xBD), byte(0x84),
+	byte(0x20), byte(0x61), byte(0xD3), byte(0xBC), byte(0x44), byte(0x45), byte(0x39), byte(0x13),
+	byte(0x00), byte(0x34), byte(0x21), byte(0x32), byte(0x11), byte(0x51), byte(0x0D), byte(0xD8),
+	byte(0x04), byte(0xC4), byte(0x46), byte(0xF4), byte(0x4E), byte(0x0D), byte(0x40), byte(0x93),
+	byte(0x20), byte(0xE3), byte(0x6F), byte(0x11), byte(0x14), byte(0x8E), byte(0x34), byte(0x02),
+	byte(0xE2), byte(0x10), byte(0xB2), byte(0xEF), byte(0x39), byte(0x61), byte(0x11), byte(0x91),
+	byte(0x51), byte(0x0D), byte(0x20), byte(0xD1), byte(0xA2), byte(0x38), byte(0xB3), byte(0x91),
+	byte(0xA0), byte(0xD4), byte(0x88), byte(0x0C), byte(0x48), byte(0x40), byte(0x47), byte(0x43),
+	byte(0x48), byte(0x4E), byte(0xB1), byte(0x12), byte(0x4A), byte(0x00), byte(0xD4), byte(0x2D),
+	byte(0x3D), byte(0x88), byte(0x0C), byte(0x4C), byte(0x40), byte(0x34), byte(0x61), byte(0x2C),
+	byte(0x10), byte(0xD4), byte(0xC8), byte(0x38), byte(0xD8), byte(0xC4), byte(0x10), byte(0xF9),
+	byte(0x03), byte(0x18), byte(0x4C), byte(0x93), byte(0x44), byte(0xE3), byte(0x46), byte(0x9C),
+	byte(0x04), byte(0x43), byte(0xCD), byte(0x13), byte(0x94), byte(0x04), byte(0xB1), byte(0x2D),
+	byte(0x10), byte(0x21), byte(0x12), byte(0x48), byte(0x04), byte(0x58), byte(0xC8), byte(0x01),
+	byte(0x44), byte(0x88), byte(0xE3), byte(0x0C), byte(0x38), byte(0xD9), byte(0x44), byte(0x01),
+	byte(0x19), byte(0x40), byte(0x30), byte(0x82), byte(0xD8), byte(0xC8), byte(0x40), byte(0x23),
+	byte(0x44), byte(0x40), byte(0x0C), byte(0x88), byte(0xE3), byte(0x45), byte(0x11), byte(0x11),
+	byte(0x0D), byte(0x08), byte(0x4C), byte(0x44), byte(0x3C), byte(0xB6), byte(0x2F), byte(0x44),
+	byte(0xE3), byte(0xC4), byte(0x45), byte(0x36), byte(0x2C), byte(0x10), byte(0x44), byte(0xC8),
+	byte(0x34), byte(0x68), byte(0x0B), byte(0x58), byte(0x06), byte(0x12), byte(0xC9), byte(0x35),
+	byte(0x05), byte(0x16), byte(0x01), byte(0x84), byte(0x34), byte(0x26), byte(0x23), byte(0x10),
+	byte(0x04), byte(0xC7), byte(0x99), byte(0x13), byte(0x96), byte(0x4C), byte(0x7C), byte(0x84),
+	byte(0x2C), byte(0xBC), byte(0x8E), byte(0x2C), byte(0x32), byte(0x04), byte(0x46), byte(0x00),
+	byte(0x93), byte(0x9C), byte(0x40), byte(0x15), byte(0x63), byte(0x61), byte(0x13), byte(0x84),
+	byte(0x01), byte(0xAC), byte(0x01), byte(0x14), byte(0x48), byte(0x00), byte(0x61), byte(0x23),
+	byte(0x10), byte(0x00), byte(0xF2), byte(0x20), byte(0xD1), byte(0xB1), byte(0x21), byte(0x21),
+	byte(0x23), byte(0x10), byte(0x20), byte(0x03), byte(0x13), byte(0x61), byte(0xCE), byte(0x32),
+	byte(0x52), byte(0x06), byte(0x51), byte(0x11), byte(0x2F), byte(0x38), byte(0xB2), byte(0x02),
+	byte(0x12), byte(0x13), byte(0x83), byte(0x62), byte(0xC0), byte(0x02), byte(0x1C), byte(0x83),
+	byte(0x44), byte(0x88), byte(0x04), byte(0xC4), byte(0x18), byte(0xE4), byte(0x58), byte(0x80),
+	byte(0x71), byte(0x00), byte(0x0E), byte(0x54), byte(0x4E), byte(0x35), byte(0x38), byte(0x80),
+	byte(0x44), byte(0x4B), byte(0x91), byte(0x0C), byte(0x44), byte(0x71), byte(0x10), byte(0x02),
+	byte(0xC8), byte(0x4D), byte(0x8B), byte(0xC0), byte(0x45), byte(0x33), byte(0x44), byte(0x47),
+	byte(0x80), byte(0x11), byte(0x0E), byte(0x11), byte(0x00), byte(0x4F), byte(0x52), byte(0x0E),
+	byte(0x2C), byte(0x43), byte(0x42), byte(0x13), byte(0x33), byte(0x93), byte(0x00), byte(0xB8),
+	byte(0xC4), byte(0x14), byte(0x43), byte(0x52), byte(0x13), byte(0x64), byte(0x48), byte(0x4C),
+	byte(0x48), byte(0x8E), byte(0x35), byte(0x25), byte(0x0C), byte(0x11), byte(0x18), byte(0x84),
+	byte(0x35), byte(0x31), byte(0x11), byte(0x99), byte(0x13), byte(0x94), byte(0x3F), byte(0x31),
+	byte(0xCE), byte(0x50), byte(0x61), byte(0xD3), byte(0xB0), byte(0xE0), byte(0xC4), byte(0x44),
+	byte(0xDC), byte(0xC0), byte(0x48), byte(0xA8), byte(0x8E), byte(0x00), byte(0x21), byte(0xF1),
+	byte(0x10), byte(0x04), byte(0x8E), byte(0x36), byte(0x01), byte(0x84), byte(0x94), byte(0x83),
+	byte(0x46), byte(0x11), byte(0x1C), byte(0x8F), byte(0x10), byte(0x22), byte(0x05), byte(0x20),
+	byte(0x28), byte(0x8E), byte(0x34), byte(0xD1), byte(0x02), byte(0x4C), byte(0x83), byte(0x8D),
+	byte(0xD8), byte(0x84), byte(0x87), byte(0xC4), byte(0x44), byte(0x8F), byte(0x38), byte(0xD4),
+	byte(0x84), byte(0xBD), byte(0x11), byte(0x13), byte(0x4D), byte(0x8B), byte(0x0E), byte(0x54),
+	byte(0x43), byte(0x04), byte(0x35), byte(0x38), byte(0x80), byte(0x44), byte(0x3A), byte(0xCE),
+	byte(0x1A), byte(0xF1), byte(0x0D), byte(0xC9), byte(0x43), byte(0x33), byte(0x44), byte(0x41),
+	byte(0x24), byte(0x35), byte(0x32), byte(0x11), byte(0x12), byte(0x22), byte(0x13), byte(0x21),
+	byte(0x91), byte(0x0D), byte(0xCC), byte(0x74), byte(0x4E), byte(0x50), byte(0x61), byte(0xCE),
+	byte(0x51), byte(0x3B), byte(0xC4), byte(0x4F), byte(0x22), byte(0x0C), byte(0x20), byte(0xB0),
+	byte(0x11), byte(0xD4), byte(0x80), byte(0x93), byte(0x20), byte(0xCB), byte(0x44), byte(0x59),
+	byte(0x23), byte(0xC0), byte(0x3C), byte(0x44), byte(0x73), byte(0x1D), byte(0x11), byte(0x00),
+	byte(0x4E), byte(0x22), byte(0xC0), byte(0x49), byte(0x2C), byte(0x87), byte(0x00), byte(0xA1),
+	byte(0x32), byte(0x39), byte(0x44), byte(0x42), byte(0x12), byte(0x00), byte(0x82), byte(0x39),
+	byte(0x43), byte(0x53), byte(0xBC), byte(0x02), byte(0x0D), byte(0x94), byte(0x02), byte(0xCB),
+	byte(0xC4), byte(0x80), byte(0x87), byte(0xBC), byte(0xE4), byte(0x92), byte(0x20), byte(0x12),
+	byte(0xC4), byte(0x80), byte(0x20), byte(0x84), byte(0x3D), byte(0x3C), byte(0x8E), byte(0x2C),
+	byte(0x80), byte(0xF3), byte(0x44), byte(0x05), byte(0x44), byte(0x2F), byte(0x30), byte(0x0B),
+	byte(0x2B), byte(0x22), byte(0x98), byte(0x89), byte(0x11), byte(0x00), byte(0x4C), byte(0x4B),
+	byte(0x4E), byte(0x34), byte(0x4B), byte(0xCB), byte(0x10), byte(0xD4), byte(0xD8), byte(0xBC),
+	byte(0x44), byte(0x48), byte(0x38), byte(0x38), byte(0xC4), byte(0x14), byte(0x83), byte(0x44),
+	byte(0xB4), byte(0xE4), byte(0x4C), byte(0x00), byte(0xBC), byte(0x44), byte(0x54), byte(0x40),
+	byte(0x0B), byte(0x8D), byte(0x12), byte(0x0D), byte(0x2A), byte(0x05), byte(0x13), byte(0x1C),
+	byte(0xE4), byte(0x72), byte(0x11), byte(0x15), byte(0x44), byte(0xB4), byte(0x03), byte(0x04),
+	byte(0xB0), byte(0xE3), byte(0x04), byte(0x35), byte(0x38), byte(0x06), byte(0x10), byte(0xD4),
+	byte(0xE3), byte(0x38), byte(0x25), byte(0x0C), byte(0x10), byte(0xD4), byte(0xE0), byte(0x09),
+	byte(0x32), byte(0x15), byte(0x21), byte(0x36), byte(0x20), byte(0x35), byte(0x85), byte(0x80),
+	byte(0x62), byte(0x01), byte(0x51), byte(0x00), byte(0x80), byte(0xF3), byte(0x60), byte(0xF1),
+	byte(0x20), byte(0x09), byte(0x32), byte(0x15), byte(0x13), byte(0x34), byte(0x40), byte(0x20),
+	byte(0xDA), byte(0x0D), byte(0x4C), byte(0x44), byte(0x44), byte(0x49), byte(0x32), byte(0x0D),
+	byte(0x1B), byte(0x10), byte(0x03), byte(0x20), byte(0xE8), byte(0xC0), byte(0x34), byte(0x61),
+	byte(0x11), byte(0x98), byte(0x43), byte(0x44), byte(0x44), byte(0x04), byte(0xC8), byte(0x38),
+	byte(0xDA), byte(0xC4), byte(0x00), byte(0x58), byte(0x8E), byte(0x3D), byte(0x8B), byte(0x00),
+	byte(0x4C), byte(0x21), byte(0xE2), byte(0x2C), byte(0x02), byte(0x0C), byte(0x80), byte(0xD6),
+	byte(0x0E), byte(0x34), byte(0x4C), byte(0x8E), byte(0x15), byte(0x35), byte(0x80), byte(0x44),
+	byte(0x4B), byte(0xC0), byte(0x45), byte(0x36), byte(0x23), byte(0x11), byte(0x52), byte(0x02),
+	byte(0x12), byte(0x23), byte(0x83), byte(0x12), byte(0xB0), byte(0x0D), byte(0x19), byte(0x40),
+	byte(0x06), byte(0x12), byte(0xB2), byte(0x0D), byte(0x2A), byte(0x73), byte(0x96), byte(0x11),
+	byte(0x51), byte(0x11), byte(0x88), byte(0xE3), byte(0x45), byte(0x21), byte(0x13), byte(0x22),
+	byte(0x38), byte(0xC3), byte(0x04), byte(0x35), byte(0x38), byte(0x88), byte(0x4D), byte(0x88),
+	byte(0x0D), byte(0x61), byte(0x61), byte(0xC4), byte(0x44), byte(0x4C), byte(0x8E), byte(0x30),
+	byte(0x45), byte(0x87), byte(0x11), byte(0x11), byte(0x23), byte(0x10), byte(0x10), byte(0x13),
+	byte(0x12), byte(0x34), byte(0x48), byte(0x54), byte(0x49), byte(0xC8), byte(0x18), byte(0x71),
+	byte(0x11), byte(0x84), byte(0x40), byte(0x14), byte(0x4C), byte(0x81), byte(0x54), byte(0x2E),
+	byte(0xE3), byte(0x4B), byte(0x20), byte(0xD1), byte(0x36), byte(0x38), byte(0xC0), byte(0x0D),
+	byte(0xBD), byte(0x12), byte(0x0E), byte(0x44), byte(0x84), byte(0xD8), byte(0xCD), byte(0x10),
+	byte(0x03), byte(0x21), byte(0x32), byte(0x0E), byte(0x34), byte(0x02), byte(0xE5), byte(0x39),
+	byte(0x44), byte(0x65), byte(0x20), byte(0xD0), byte(0x0D), byte(0x08), byte(0x80), byte(0x0B),
+	byte(0x79), byte(0xE7), byte(0x9E)
+};
+
+DictEntry TextCodec::STATIC_DICTIONARY[1024] = {};
+const bool* TextCodec::DELIMITER_CHARS = TextCodec::initDelimiterChars();
+const bool* TextCodec::TEXT_CHARS = TextCodec::initTextChars();
+const int TextCodec::STATIC_DICT_WORDS = TextCodec::createDictionary(TextCodec::unpackDictionary32(DICT_EN_1024, sizeof(DICT_EN_1024)), STATIC_DICTIONARY, 1024, 0);
+
+bool* TextCodec::initDelimiterChars()
+{
+	bool* res = new bool[256];
+
+	for (int i = 0; i < 256; i++) {
+		if ((i >= ' ') && (i <= '/')) // [ !"#$%&'()*+,-./]
+			res[i] = true;
+		else if ((i >= ':') && (i <= '?')) // [:;<=>?]
+			res[i] = true;
+		else {
+			switch (i) {
+			case '\n':
+			case '\r':
+			case '\t':
+			case '_':
+			case '|':
+			case '{':
+			case '}':
+			case '[':
+			case ']':
+				res[i] = true;
+				break;
+			default:
+				res[i] = false;
+			}
+		}
+	}
+
+	return res;
+}
+
+bool* TextCodec::initTextChars()
+{
+	bool* res = new bool[256];
+
+	for (int i = 0; i < 256; i++) {
+		res[i] = isUpperCase(byte(i)) | isLowerCase(byte(i));
+	}
+
+	return res;
+}
+
+// Create dictionary from array of words
+int TextCodec::createDictionary(SliceArray<byte> input, DictEntry dict[], int maxWords, int startWord)
+{
+	int delimAnchor = 0;
+	int32 h = HASH1;
+	int nbWords = startWord;
+	int dictSize = input._length;
+	byte* words = input._array;
+
+	for (int i = 0; ((i < dictSize) && (nbWords < maxWords)); i++) {
+		byte cur = words[i];
+
+		if (isText(cur)) {
+			h = h * HASH1 ^ int32(cur) * HASH2;
+			continue;
+		}
+
+		if ((isDelimiter(cur)) && (i >= delimAnchor + 1)) { // At least 2 letters
+			dict[nbWords] = DictEntry(&words[delimAnchor], h, nbWords, i - delimAnchor);
+			nbWords++;
+		}
+
+		delimAnchor = i + 1;
+		h = HASH1;
+	}
+
+	return nbWords;
+}
+
+// Unpack dictionary with 32 symbols (all lowercase except first word char)
+SliceArray<byte> TextCodec::unpackDictionary32(const byte dict[], int dictSize)
+{
+	byte* buf = new byte[dictSize * 2];
+	int d = 0;
+	int val = 0;
+
+	// Unpack 3 bytes into 4 6-bit symbols
+	for (int i = 0; i < dictSize; i++) {
+		val = (val << 8) | (int(dict[i]) & 0xFF);
+
+		if ((i % 3) == 2) {
+			for (int ii = 18; ii >= 0; ii -= 6) {
+				int c = (val >> ii) & 0x3F;
+
+				if (c >= 32)
+					buf[d++] = TextCodec::SP;
+
+				c &= 0x1F;
+
+				// Ignore padding symbols (> 26 and <= 31)
+				if (c <= 26)
+					buf[d++] = byte(c + 'a');
+			}
+
+			val = 0;
+		}
+	}
+
+	buf[d] = TextCodec::SP; // End
+	byte* res = new byte[d];
+	memcpy(&res[0], &buf[1], d);
+	delete[] buf;
+	return SliceArray<byte>(res, d, 0);
+}
+
+// return 8-bit status (see MASK flags constants)
+byte TextCodec::computeStats(byte block[], int count, int32 freqs0[])
+{
+	int32 freqs[256][256] = { { 0 } };
+	int32 f0[256] = { 0 };
+	int32 f1[256] = { 0 };
+	int32 f3[256] = { 0 };
+	int32 f2[256] = { 0 };
+	uint8* data = (uint8*)&block[0];
+	uint8 prv = 0;
+	const int count4 = count & -4;
+
+	// Unroll loop
+	for (int i = 0; i < count4; i += 4) {
+		const uint8 cur0 = data[i];
+		const uint8 cur1 = data[i + 1];
+		const uint8 cur2 = data[i + 2];
+		const uint8 cur3 = data[i + 3];
+		f0[cur0]++;
+		f1[cur1]++;
+		f2[cur2]++;
+		f3[cur3]++;
+		freqs[prv][cur0]++;
+		freqs[cur0][cur1]++;
+		freqs[cur1][cur2]++;
+		freqs[cur2][cur3]++;
+		prv = cur3;
+	}
+
+	for (int i = count4; i<count; i++) {
+		freqs0[data[i]]++;
+		freqs[prv][data[i]]++;
+		prv = data[i];
+	}
+
+	for (int i = 0; i < 256; i++) {
+		freqs0[i] += (f0[i] + f1[i] + f2[i] + f3[i]);
+	}
+
+	int nbTextChars = 0;
+
+	for (int i = 32; i < 128; i++) {
+		if (isText(byte(i)) == true)
+			nbTextChars += freqs0[i];
+	}
+
+	// Not text (crude threshold)
+	if (2 * nbTextChars < count)
+		return TextCodec::MASK_NOT_TEXT;
+
+	int nbBinChars = 0;
+
+	for (int i = 128; i < 256; i++)
+		nbBinChars += freqs0[i];
+
+	// Not text (crude threshold)
+	if (4 * nbBinChars > count)
+		return TextCodec::MASK_NOT_TEXT;
+
+	// Not text (crude threshold)
+	if (16 * freqs0[32] < count)
+		return TextCodec::MASK_NOT_TEXT;
+
+	byte res = byte(0);
+
+	if (nbBinChars == 0)
+		res |= TextCodec::MASK_FULL_ASCII;
+	else if (nbBinChars <= count / 100)
+		res |= TextCodec::MASK_ALMOST_FULL_ASCII;
+      
+	if (nbBinChars <= count - count / 10) {
+		// Check if likely XML/HTML
+		// Another crude test: check that the frequencies of < and > are similar
+		// and 'high enough'. Also check it is worth to attempt replacing ampersand sequences.
+		// Getting this flag wrong results in a very small compression speed degradation.
+		const int32 f1 = freqs0[60]; // '<'
+		const int32 f2 = freqs0[62]; // '>'
+		const int32 f3 = freqs[38][97] + freqs[38][103] + freqs[38][108] + freqs[38][113]; // '&a', '&g', '&l', '&q'
+		const int32 minFreq = (((count - nbBinChars) >> 9) < 2) ? 2 : (count - nbBinChars) >> 9;         
+         
+		if ((f1 >= minFreq) && (f2 >= minFreq) && (f3 > 0)) {
+			if (f1 < f2) { 
+				if (f1 >= (f2 - f2 / 100)) 
+					res |= TextCodec::MASK_XML_HTML;
+			}
+			else if (f2 < f1)  {
+				if (f2 >= (f1 - f1 / 100))            
+					res |= TextCodec::MASK_XML_HTML;
+			} 
+			else 
+				res |= TextCodec::MASK_XML_HTML;
+ 		}
+	}
+
+	// Check CR+LF matches
+        const int cr = int(CR);
+        const int lf = int(LF);
+
+	if ((freqs0[cr] != 0) && (freqs0[cr] == freqs0[lf])) {
+		res |= TextCodec::MASK_CRLF;
+
+		for (int i = 0; i < 256; i++) {
+			if ((i != lf) && (freqs[cr][i]) != 0) {
+				res &= ~TextCodec::MASK_CRLF;
+				break;
+			}
+		}
+	}
+
+	return res;
+}
+
+TextCodec::TextCodec()
+{
+	_delegate = new TextCodec1();
+}
+
+TextCodec::TextCodec(map<string, string>& ctx)
+{
+	int encodingType = 1;
+
+	if (ctx.find("textcodec") != ctx.end()) {
+		string strType = ctx["textcodec"];
+		encodingType = atoi(strType.c_str());
+	}
+
+	_delegate = (encodingType == 1) ? (Function<byte>*) new TextCodec1(ctx) : (Function<byte>*) new TextCodec2(ctx);
+}
+
+bool TextCodec::forward(SliceArray<byte>& input, SliceArray<byte>& output, int count) THROW
+{
+    if (count == 0)
+        return true;
+
+    if (!SliceArray<byte>::isValid(input))
+        throw invalid_argument("Invalid input block");
+
+    if (!SliceArray<byte>::isValid(output))
+        throw invalid_argument("Invalid output block");
+
+    if (input._array == output._array)
+        return false;
+
+    if (count > MAX_BLOCK_SIZE) {
+        // Not a recoverable error: instead of silently fail the transform,
+        // issue a fatal error.
+        stringstream ss;
+        ss << "The max text transform block size is " << MAX_BLOCK_SIZE << ", got " << count;
+        throw invalid_argument(ss.str());
+    }
+
+    return _delegate->forward(input, output, count);
+}
+
+bool TextCodec::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int count) THROW
+{
+    if (count == 0)
+        return true;
+
+    if (!SliceArray<byte>::isValid(input))
+        throw invalid_argument("Invalid input block");
+
+    if (!SliceArray<byte>::isValid(output))
+        throw invalid_argument("Invalid output block");
+
+    if (input._array == output._array)
+        return false;
+
+    if (count > MAX_BLOCK_SIZE) {
+        // Not a recoverable error: instead of silently fail the transform,
+        // issue a fatal error.
+        stringstream ss;
+        ss << "The max text transform block size is " << MAX_BLOCK_SIZE << ", got " << count;
+        throw invalid_argument(ss.str());
+    }
+
+    return _delegate->inverse(input, output, count);
+}
+
+
+TextCodec1::TextCodec1()
+{
+	_logHashSize = TextCodec::LOG_HASHES_SIZE;
+	_dictSize = TextCodec::THRESHOLD2 * 4;
+	const int32 mapSize = 1 << _logHashSize;
+	_dictMap = new DictEntry*[mapSize];
+	_dictList = new DictEntry[_dictSize];
+	_hashMask = mapSize - 1;
+	int nbWords = TextCodec::STATIC_DICT_WORDS;
+	memcpy(static_cast<void*>(&_dictList[0]), &TextCodec::STATIC_DICTIONARY[0], TextCodec::STATIC_DICT_WORDS * sizeof(DictEntry));
+
+	// Add special entries at start of map
+	_escapes[0] = TextCodec::ESCAPE_TOKEN2;
+	_escapes[1] = TextCodec::ESCAPE_TOKEN1;
+	_dictList[nbWords] = DictEntry(&_escapes[0], 0, nbWords, 1);
+	_dictList[nbWords + 1] = DictEntry(&_escapes[1], 0, nbWords + 1, 1);
+	_staticDictSize = nbWords + 2;
+	_isCRLF = false;
+}
+
+TextCodec1::TextCodec1(map<string, string>& ctx)
+{
+	// Actual block size
+	int blockSize = 0;
+	int log = 13;
+	map<string, string>::iterator it = ctx.find("size");
+
+	if (it != ctx.end()) {
+		blockSize = atoi(it->second.c_str());
+		
+		if (blockSize >= 4)		
+			log = max(min(Global::log2(blockSize / 4), 26), 13);
+	}
+
+	// Select an appropriate initial dictionary size
+	int dSize = 1 << 12;
+
+	for (int i = 14; i <= 24; i += 2) {
+		if (blockSize >= 1 << i)
+			dSize <<= 1;
+	}
+
+	uint extraMem = 0;
+
+	if (ctx.find("extra") != ctx.end()) {
+		string strExtra = ctx["extra"];
+		extraMem = (strExtra.compare(0, 5, "TRUE") == 0) ? 1 : 0;
+	}
+
+	_logHashSize = log + extraMem;
+	_dictSize = dSize;
+	const int32 mapSize = 1 << _logHashSize;
+	_dictMap = new DictEntry*[mapSize];
+	_dictList = new DictEntry[_dictSize];
+	_hashMask = mapSize - 1;
+	int nbWords = TextCodec::STATIC_DICT_WORDS;
+	memcpy(static_cast<void*>(&_dictList[0]), &TextCodec::STATIC_DICTIONARY[0], TextCodec::STATIC_DICT_WORDS * sizeof(DictEntry));
+
+	// Add special entries at start of map
+	_escapes[0] = TextCodec::ESCAPE_TOKEN2;
+	_escapes[1] = TextCodec::ESCAPE_TOKEN1;
+	_dictList[nbWords] = DictEntry(&_escapes[0], 0, nbWords, 1);
+	_dictList[nbWords + 1] = DictEntry(&_escapes[1], 0, nbWords + 1, 1);
+	_staticDictSize = nbWords + 2;
+	_isCRLF = false;
+}
+
+void TextCodec1::reset() {
+	// Clear and populate hash map
+	const int32 mapSize = 1 << _logHashSize;
+
+	for (int i = 0; i < mapSize; i++)
+		_dictMap[i] = nullptr;
+
+	for (int i = 0; i < _staticDictSize; i++)
+		_dictMap[_dictList[i]._hash & _hashMask] = &_dictList[i];
+
+	// Pre-allocate all dictionary entries
+	for (int i = _staticDictSize; i < _dictSize; i++)
+		_dictList[i] = DictEntry(nullptr, 0, i, 0);
+}
+
+bool TextCodec1::forward(SliceArray<byte>& input, SliceArray<byte>& output, int count)
+{
+	if (output._length - output._index < getMaxEncodedLength(count))
+		return false;
+
+	byte* src = &input._array[input._index];
+	byte* dst = &output._array[output._index];
+	int srcIdx = 0;
+	int dstIdx = 0;
+
+	int32 freqs[256] = { 0 };
+	byte mode = TextCodec::computeStats(&src[srcIdx], count, freqs);
+
+	// Not text ?
+	if ((mode & TextCodec::MASK_NOT_TEXT) != byte(0))
+		return false;
+
+	reset();
+	const int srcEnd = count;
+	const int dstEnd = getMaxEncodedLength(count);
+	const int dstEnd4 = dstEnd - 4;
+	int emitAnchor = 0; // never less than 0
+	int words = _staticDictSize;
+
+	// DOS encoded end of line (CR+LF) ?
+	_isCRLF = int(mode & TextCodec::MASK_CRLF) != 0;
+	dst[dstIdx++] = mode;
+	bool res = true;
+
+	while ((srcIdx < srcEnd) && (src[srcIdx] == TextCodec::SP)) {
+		dst[dstIdx++] = TextCodec::SP;
+		srcIdx++;
+		emitAnchor++;
+	}
+
+	int delimAnchor = TextCodec::isText(src[srcIdx]) ? srcIdx - 1 : srcIdx; // previous delimiter
+
+	while (srcIdx < srcEnd) {
+		if (TextCodec::isText(src[srcIdx])) {
+			srcIdx++;
+			continue;
+		}
+
+		if ((srcIdx > delimAnchor + 2) && TextCodec::isDelimiter(src[srcIdx])) { // At least 2 letters
+			// Compute hashes
+			// h1 -> hash of word chars
+			// h2 -> hash of word chars with first char case flipped
+			const byte val = src[delimAnchor + 1];
+			const int32 caseFlag = TextCodec::isUpperCase(val) ? 32 : -32;
+			int32 h1 = TextCodec::HASH1;
+			int32 h2 = TextCodec::HASH1;
+			h1 = h1 * TextCodec::HASH1 ^ int32(val) * TextCodec::HASH2;
+			h2 = h2 * TextCodec::HASH1 ^ (int32(val) + caseFlag) * TextCodec::HASH2;
+
+			for (int i = delimAnchor + 2; i < srcIdx; i++) {
+				h1 = h1 * TextCodec::HASH1 ^ int32(src[i]) * TextCodec::HASH2;
+				h2 = h2 * TextCodec::HASH1 ^ int32(src[i]) * TextCodec::HASH2;
+			}
+
+			// Check word in dictionary
+			const int length = srcIdx - delimAnchor - 1;
+			prefetchRead(&_dictMap[h1 & _hashMask]);
+			DictEntry* pe1 = _dictMap[h1 & _hashMask];
+
+			// Check for hash collisions
+			if ((pe1 != nullptr) && ((pe1->_hash != h1) || ((pe1->_data >> 24) != length)))
+				pe1 = nullptr;
+
+			DictEntry* pe = pe1;
+
+			if (pe == nullptr) {
+				prefetchRead(&_dictMap[h2 & _hashMask]);
+				DictEntry* pe2 = _dictMap[h2 & _hashMask];
+
+				if ((pe2 != nullptr) && ((pe2->_data >> 24) == length) && (pe2->_hash == h2))
+					pe = pe2;
+			}
+
+			if (pe != nullptr) {
+				if (!TextCodec::sameWords(pe->_ptr + 1, &src[delimAnchor + 2], length - 1))
+					pe = nullptr;
+			}
+
+			if (pe == nullptr) {
+				// Word not found in the dictionary or hash collision: add or replace word
+				if (((length > 3) || ((length > 2) && (words < TextCodec::THRESHOLD2))) && (length < TextCodec::MAX_WORD_LENGTH)) {
+					DictEntry* pe = &_dictList[words];
+
+					if ((pe->_data & 0x00FFFFFF) >= _staticDictSize) {
+						// Reuse old entry
+						_dictMap[pe->_hash & _hashMask] = nullptr;
+						pe->_ptr = &src[delimAnchor + 1];
+						pe->_hash = h1;
+						pe->_data = (length << 24) | words;
+					}
+
+					// Update hash map
+					_dictMap[h1 & _hashMask] = pe;
+					words++;
+
+					// Dictionary full ? Expand or reset index to end of static dictionary
+					if (words >= _dictSize) {
+						if (expandDictionary() == false)
+							words = _staticDictSize;
+					}
+				}
+			}
+			else {
+				// Word found in the dictionary
+				// Skip space if only delimiter between 2 word references
+				if ((emitAnchor != delimAnchor) || (src[delimAnchor] != byte(' '))) {
+					int dIdx = emitSymbols(&src[emitAnchor], &dst[dstIdx], delimAnchor + 1 - emitAnchor, dstEnd - dstIdx);
+
+ 					if (dIdx < 0) {
+ 						res = false;
+ 						break;
+					}
+
+					dstIdx += dIdx;
+				}
+
+				if (dstIdx >= dstEnd4){
+					res = false;
+					break;
+				}
+
+				dst[dstIdx++] = (pe == pe1) ? TextCodec::ESCAPE_TOKEN1 : TextCodec::ESCAPE_TOKEN2;
+				dstIdx += emitWordIndex(&dst[dstIdx], pe->_data & 0x00FFFFFF);
+				emitAnchor = delimAnchor + 1 + int(pe->_data >> 24);
+			}
+		}
+
+		// Reset delimiter position
+		delimAnchor = srcIdx;
+		srcIdx++;
+	}
+
+	if (res == true) {
+		// Emit last symbols
+		int dIdx = emitSymbols(&src[emitAnchor], &dst[dstIdx], srcEnd - emitAnchor, dstEnd - dstIdx);
+
+		if (dIdx < 0) 
+			res = false;
+		else 
+			dstIdx += dIdx;
+
+		res &= (srcIdx == srcEnd);
+	}
+
+	output._index += dstIdx;
+	input._index += srcIdx;
+	return res;
+}
+
+
+bool TextCodec1::expandDictionary()
+{
+	if (_dictSize >= TextCodec::MAX_DICT_SIZE)
+		return false;
+
+	DictEntry* newDict = new DictEntry[_dictSize * 2];
+	memcpy(static_cast<void*>(&newDict[0]), &_dictList[0], sizeof(DictEntry) * _dictSize);
+
+	for (int i = _dictSize; i < _dictSize * 2; i++)
+		newDict[i] = DictEntry(nullptr, 0, i, 0);
+
+	delete[] _dictList;
+	_dictList = newDict;
+
+	// Reset map (values must point to addresses of new DictEntry items)
+	for (int i = 0; i < _dictSize; i++) {
+		_dictMap[_dictList[i]._hash & _hashMask] = &_dictList[i];
+	}
+
+	_dictSize <<= 1;
+	return true;
+}
+
+int TextCodec1::emitSymbols(byte src[], byte dst[], const int srcEnd, const int dstEnd)
+{
+	int dstIdx = 0;
+
+	for (int i = 0; i < srcEnd; i++) {
+		if (dstIdx >= dstEnd)
+			return -1;
+
+		const byte cur = src[i];
+
+		switch (cur)
+		{
+		case TextCodec::ESCAPE_TOKEN1:
+		case TextCodec::ESCAPE_TOKEN2: {
+			// Emit special word
+			dst[dstIdx++] = TextCodec::ESCAPE_TOKEN1;
+			const int idx = (cur == TextCodec::ESCAPE_TOKEN1) ? _staticDictSize - 1 : _staticDictSize - 2;
+			int lenIdx = 1;
+
+			if (idx >= TextCodec::THRESHOLD1)
+				lenIdx = (idx >= TextCodec::THRESHOLD2) ? 3 : 2;
+
+			if (dstIdx + lenIdx >= dstEnd)
+				return -1;
+         
+			dstIdx += emitWordIndex(&dst[dstIdx], idx);
+			break;
+		}
+
+		case TextCodec::CR:
+			if (_isCRLF == false)
+				dst[dstIdx++] = cur;
+
+			break;
+
+		default:
+			dst[dstIdx++] = cur;
+		}
+	}
+
+	return dstIdx;
+}
+
+int TextCodec1::emitWordIndex(byte dst[], int val)
+{
+	// Emit word index (varint 5 bits + 7 bits + 7 bits)
+	if (val >= TextCodec::THRESHOLD1) {
+		int dstIdx = 0;
+
+		if (val >= TextCodec::THRESHOLD2)
+			dst[dstIdx++] = byte(0xE0 | (val >> 14));
+
+		dst[dstIdx] = byte(0x80 | (val >> 7));
+		dst[dstIdx + 1] = byte(0x7F & val);
+		return dstIdx + 2;
+	}
+
+	dst[0] = byte(val);
+	return 1;
+}
+
+bool TextCodec1::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int count)
+{
+	byte* src = &input._array[input._index];
+	byte* dst = &output._array[output._index];
+	int srcIdx = 0;
+	int dstIdx = 0;
+	reset();
+	const int srcEnd = count;
+	const int dstEnd = output._length;
+	int delimAnchor = TextCodec::isText(src[srcIdx]) ? srcIdx - 1 : srcIdx; // previous delimiter
+	int words = _staticDictSize;
+	bool wordRun = false;
+	_isCRLF = int(src[srcIdx++] & TextCodec::MASK_CRLF) != 0;
+
+	while ((srcIdx < srcEnd) && (dstIdx < dstEnd)) {
+		byte cur = src[srcIdx];
+
+		if (TextCodec::isText(cur)) {
+			dst[dstIdx] = cur;
+			srcIdx++;
+			dstIdx++;
+			continue;
+		}
+
+		if ((srcIdx > delimAnchor + 2) && TextCodec::isDelimiter(cur)) {
+			int32 h1 = TextCodec::HASH1;
+
+			for (int i = delimAnchor + 1; i < srcIdx; i++)
+				h1 = h1 * TextCodec::HASH1 ^ int32(src[i]) * TextCodec::HASH2;
+
+			// Lookup word in dictionary
+			const int length = srcIdx - delimAnchor - 1;
+			DictEntry* pe = _dictMap[h1 & _hashMask];
+
+			// Check for hash collisions
+			if (pe != nullptr) {
+				if ((pe->_hash != h1) || ((pe->_data >> 24) != length)) {
+					pe = nullptr;
+				}
+				else if (!TextCodec::sameWords(pe->_ptr + 1, &src[delimAnchor + 2], length - 1)) {
+					pe = nullptr;
+				}
+			}
+
+			if (pe == nullptr) {
+				// Word not found in the dictionary or hash collision: add or replace word
+				if (((length > 3) || ((length > 2) && (words < TextCodec::THRESHOLD2))) && (length < TextCodec::MAX_WORD_LENGTH)) {
+					DictEntry& e = _dictList[words];
+
+					if ((e._data & 0x00FFFFFF) >= _staticDictSize) {
+						// Reuse old entry
+						_dictMap[e._hash & _hashMask] = nullptr;
+						e._ptr = &src[delimAnchor + 1];
+						e._hash = h1;
+						e._data = (length << 24) | words;
+					}
+
+					_dictMap[h1 & _hashMask] = &e;
+					words++;
+
+					// Dictionary full ? Expand or reset index to end of static dictionary
+					if (words >= _dictSize) {
+						if (expandDictionary() == false)
+							words = _staticDictSize;
+					}
+				}
+			}
+		}
+
+		srcIdx++;
+
+		if ((cur == TextCodec::ESCAPE_TOKEN1) || (cur == TextCodec::ESCAPE_TOKEN2)) {
+			// Word in dictionary
+			// Read word index (varint 5 bits + 7 bits + 7 bits)
+			int idx = int(src[srcIdx++]) & 0xFF;
+
+			if ((idx & 0x80) != 0) {
+				idx &= 0x7F;
+				int idx2 = int(src[srcIdx++]);
+
+				if ((idx2 & 0x80) != 0) {
+					idx = ((idx & 0x1F) << 7) | (idx2 & 0x7F);
+					idx2 = int(src[srcIdx++]);
+				}
+
+				idx = (idx << 7) | (idx2 & 0x7F);
+
+				if (idx >= _dictSize)
+					break;
+			}
+
+			const DictEntry& e = _dictList[idx];
+			const int length = e._data >> 24;
+			const byte* buf = e._ptr;
+
+			// Sanity check
+			if ((buf == nullptr) || (dstIdx + length >= dstEnd))
+				break;
+
+			// Add space if only delimiter between 2 words (not an escaped delimiter)
+			if ((wordRun == true) && (length > 1))
+				dst[dstIdx++] = TextCodec::SP;
+
+			// Emit word
+			if (cur != TextCodec::ESCAPE_TOKEN2) {
+				dst[dstIdx] = *buf;
+			}
+			else {
+				// Flip case of first character
+				dst[dstIdx] = TextCodec::isUpperCase(buf[0]) ? byte(uint8(buf[0]) + 32) : byte(uint8(buf[0]) - 32);
+			}
+
+			if (length > 1) {
+				memcpy(&dst[dstIdx+1], &buf[1], length-1);
+
+				// Regular word entry
+				wordRun = true;
+				delimAnchor = srcIdx;
+			}
+			else {
+				// Escape entry
+				wordRun = false;
+				delimAnchor = srcIdx - 1;
+			}
+
+			dstIdx += length;
+		}
+		else {
+			wordRun = false;
+			delimAnchor = srcIdx - 1;
+
+			if ((_isCRLF == true) && (cur == TextCodec::LF))
+				dst[dstIdx++] = TextCodec::CR;
+
+			dst[dstIdx++] = cur;
+		}
+	}
+
+	output._index += dstIdx;
+	input._index += srcIdx;
+	return srcIdx == srcEnd;
+}
+
+TextCodec2::TextCodec2()
+{
+	_logHashSize = TextCodec::LOG_HASHES_SIZE;
+	_dictSize = TextCodec::THRESHOLD2 * 4;
+	const int32 mapSize = 1 << _logHashSize;
+	_dictMap = new DictEntry*[mapSize];
+	_dictList = new DictEntry[_dictSize];
+	_hashMask = mapSize - 1;
+	memcpy(static_cast<void*>(&_dictList[0]), &TextCodec::STATIC_DICTIONARY[0], TextCodec::STATIC_DICT_WORDS * sizeof(DictEntry));
+	_staticDictSize = TextCodec::STATIC_DICT_WORDS;
+	_isCRLF = false;
+}
+
+TextCodec2::TextCodec2(map<string, string>& ctx)
+{
+	// Actual block size
+	int blockSize = 0;
+	int log = 13;
+	map<string, string>::iterator it = ctx.find("size");
+
+	if (it != ctx.end()) {
+		blockSize = atoi(it->second.c_str());
+		
+		if (blockSize >= 4)
+			log = max(min(Global::log2(blockSize / 4), 26), 13);
+	}
+
+	// Select an appropriate initial dictionary size
+	int dSize = 1 << 12;
+
+	for (int i = 14; i <= 24; i += 2) {
+		if (blockSize >= 1 << i)
+			dSize <<= 1;
+	}
+
+	uint extraMem = 0;
+
+	if (ctx.find("extra") != ctx.end()) {
+		string strExtra = ctx["extra"];
+		extraMem = (strExtra.compare(0, 5, "TRUE") == 0) ? 1 : 0;
+	}
+
+	_logHashSize = log + extraMem;
+	_dictSize = dSize;
+	const int32 mapSize = 1 << _logHashSize;
+	_dictMap = new DictEntry*[mapSize];
+	_dictList = new DictEntry[_dictSize];
+	_hashMask = mapSize - 1;
+	memcpy(static_cast<void*>(&_dictList[0]), &TextCodec::STATIC_DICTIONARY[0], TextCodec::STATIC_DICT_WORDS * sizeof(DictEntry));
+	_staticDictSize = TextCodec::STATIC_DICT_WORDS;
+	_isCRLF = false;
+}
+
+
+void TextCodec2::reset() {
+	// Clear and populate hash map
+	const int32 mapSize = 1 << _logHashSize;
+
+	for (int i = 0; i < mapSize; i++)
+		_dictMap[i] = nullptr;
+
+	for (int i = 0; i < _staticDictSize; i++)
+		_dictMap[_dictList[i]._hash & _hashMask] = &_dictList[i];
+
+	// Pre-allocate all dictionary entries
+	for (int i = _staticDictSize; i < _dictSize; i++)
+		_dictList[i] = DictEntry(nullptr, 0, i, 0);
+}
+
+
+bool TextCodec2::forward(SliceArray<byte>& input, SliceArray<byte>& output, int count)
+{
+	if (output._length - output._index < getMaxEncodedLength(count))
+		return false;
+
+	byte* src = &input._array[input._index];
+	byte* dst = &output._array[output._index];
+	int srcIdx = 0;
+	int dstIdx = 0;
+
+	int32 freqs[256]= { 0 };
+	byte mode = TextCodec::computeStats(&src[srcIdx], count, freqs);
+
+	// Not text ?
+	if ((mode & TextCodec::MASK_NOT_TEXT) != byte(0))
+		return false;
+
+	reset();
+	const int srcEnd = count;
+	const int dstEnd = getMaxEncodedLength(count);
+	const int dstEnd3 = dstEnd - 3;
+	int emitAnchor = 0; // never less than 0
+	int words = _staticDictSize;
+
+	// DOS encoded end of line (CR+LF) ?
+	_isCRLF = (mode & TextCodec::MASK_CRLF) != byte(0);
+	dst[dstIdx++] = mode;
+	bool res = true;
+
+	while ((srcIdx < srcEnd) && (src[srcIdx] == TextCodec::SP)) {
+		dst[dstIdx++] = TextCodec::SP;
+		srcIdx++;
+		emitAnchor++;
+	}
+
+	int delimAnchor = TextCodec::isText(src[srcIdx]) ? srcIdx - 1 : srcIdx; // previous delimiter
+
+	while (srcIdx < srcEnd) {
+		if (TextCodec::isText(src[srcIdx])) {
+			srcIdx++;
+			continue;
+		}
+
+		if ((srcIdx > delimAnchor + 2) && TextCodec::isDelimiter(src[srcIdx])) {
+			// At least 2 letters
+			// Compute hashes
+			// h1 -> hash of word chars
+			// h2 -> hash of word chars with first char case flipped
+			const byte val = src[delimAnchor + 1];
+			const int32 caseFlag = TextCodec::isUpperCase(val) ? 32 : -32;
+			int32 h1 = TextCodec::HASH1;
+			int32 h2 = TextCodec::HASH1;
+			h1 = h1 * TextCodec::HASH1 ^ int32(val) * TextCodec::HASH2;
+			h2 = h2 * TextCodec::HASH1 ^ (int32(val) + caseFlag) * TextCodec::HASH2;
+
+			for (int i = delimAnchor + 2; i < srcIdx; i++) {
+				h1 = h1 * TextCodec::HASH1 ^ int32(src[i]) * TextCodec::HASH2;
+				h2 = h2 * TextCodec::HASH1 ^ int32(src[i]) * TextCodec::HASH2;
+			}
+
+			// Check word in dictionary
+			const int length = srcIdx - delimAnchor - 1;
+			prefetchRead(&_dictMap[h1 & _hashMask]);
+			DictEntry* pe1 = _dictMap[h1 & _hashMask];
+
+			// Check for hash collisions
+			if ((pe1 != nullptr) && ((pe1->_hash != h1) || ((pe1->_data >> 24) != length)))
+				pe1 = nullptr;
+
+			DictEntry* pe = pe1;
+
+			if (pe == nullptr) {
+				prefetchRead(&_dictMap[h2 & _hashMask]);
+				DictEntry* pe2 = _dictMap[h2 & _hashMask];
+
+				if ((pe2 != nullptr) && ((pe2->_data >> 24) == length) && (pe2->_hash == h2))
+					pe = pe2;
+			}
+
+			if (pe != nullptr) {
+				if (!TextCodec::sameWords(pe->_ptr + 1, &src[delimAnchor + 2], length - 1))
+					pe = nullptr;
+			}
+
+			if (pe == nullptr) {
+				// Word not found in the dictionary or hash collision: add or replace word
+				if (((length > 3) || ((length > 2) && (words < TextCodec::THRESHOLD2))) && (length < TextCodec::MAX_WORD_LENGTH)) {
+					DictEntry* pe = &_dictList[words];
+
+					if ((pe->_data & 0x00FFFFFF) >= _staticDictSize) {
+						// Reuse old entry
+						_dictMap[pe->_hash & _hashMask] = nullptr;
+						pe->_ptr = &src[delimAnchor + 1];
+						pe->_hash = h1;
+						pe->_data = (length << 24) | words;
+					}
+
+					// Update hash map
+					_dictMap[h1 & _hashMask] = pe;
+					words++;
+
+					// Dictionary full ? Expand or reset index to end of static dictionary
+					if (words >= _dictSize) {
+						if (expandDictionary() == false)
+							words = _staticDictSize;
+					}
+				}
+			}
+			else {
+            // Word found in the dictionary
+            // Skip space if only delimiter between 2 word references
+            if ((emitAnchor != delimAnchor) || (src[delimAnchor] != TextCodec::SP)) {
+					int dIdx = emitSymbols(&src[emitAnchor], &dst[dstIdx], delimAnchor + 1 - emitAnchor, dstEnd - dstIdx);
+
+ 					if (dIdx < 0) {
+ 						res = false;
+ 						break;
+					}
+
+					dstIdx += dIdx;
+				}
+
+				if (dstIdx >= dstEnd3){
+					res = false;
+					break;
+				}
+
+				dstIdx += emitWordIndex(&dst[dstIdx], pe->_data & 0x00FFFFFF, (pe == pe1) ? 0 : 32);
+				emitAnchor = delimAnchor + 1 + int(pe->_data >> 24);
+			}
+		}
+
+		// Reset delimiter position
+		delimAnchor = srcIdx;
+		srcIdx++;
+	}
+
+	if (res == true) {
+		// Emit last symbols
+		int dIdx = emitSymbols(&src[emitAnchor], &dst[dstIdx], srcEnd - emitAnchor, dstEnd - dstIdx);
+
+		if (dIdx < 0) 
+			res = false;
+		else 
+			dstIdx += dIdx;
+
+		res &= (srcIdx == srcEnd);
+	}
+
+	output._index += dstIdx;
+	input._index += srcIdx;
+	return res;
+}
+
+
+bool TextCodec2::expandDictionary()
+{
+	if (_dictSize >= TextCodec::MAX_DICT_SIZE)
+		return false;
+
+	DictEntry* newDict = new DictEntry[_dictSize * 2];
+	memcpy(static_cast<void*>(&newDict[0]), &_dictList[0], sizeof(DictEntry) * _dictSize);
+
+	for (int i = _dictSize; i < _dictSize * 2; i++)
+		newDict[i] = DictEntry(nullptr, 0, i, 0);
+
+	delete[] _dictList;
+	_dictList = newDict;
+
+	// Reset map (values must point to addresses of new DictEntry items)
+	for (int i = 0; i < _dictSize; i++) {
+		_dictMap[_dictList[i]._hash & _hashMask] = &_dictList[i];
+	}
+
+	_dictSize <<= 1;
+	return true;
+}
+
+int TextCodec2::emitSymbols(byte src[], byte dst[], const int srcEnd, const int dstEnd)
+{
+	int dstIdx = 0;
+
+   if (2 * srcEnd < dstEnd) {
+      for (int i = 0; i < srcEnd; i++) {
+		   const byte cur = src[i];
+
+		   switch (cur)
+		   {
+		   case TextCodec::ESCAPE_TOKEN1:
+			   dst[dstIdx++] = TextCodec::ESCAPE_TOKEN1;
+			   dst[dstIdx++] = TextCodec::ESCAPE_TOKEN1;
+			   break;
+
+		   case TextCodec::CR:
+			   if (_isCRLF == false)
+				   dst[dstIdx++] = cur;
+
+			   break;
+
+		   default:
+			   if ((cur & TextCodec::MASK_80) != byte(0))
+				   dst[dstIdx++] = TextCodec::ESCAPE_TOKEN1;
+
+			   dst[dstIdx++] = cur;
+		   }
+	   }
+   }
+   else {
+	   for (int i = 0; i < srcEnd; i++) {
+		   const byte cur = src[i];
+
+		   switch (cur)
+		   {
+		   case TextCodec::ESCAPE_TOKEN1:
+			   if (dstIdx >= dstEnd - 1)
+			      return -1;
+
+			   dst[dstIdx++] = TextCodec::ESCAPE_TOKEN1;
+			   dst[dstIdx++] = TextCodec::ESCAPE_TOKEN1;
+			   break;
+
+		   case TextCodec::CR:
+            if (_isCRLF == false) {
+				   if (dstIdx >= dstEnd)
+				      return -1;
+
+				   dst[dstIdx++] = cur;
+            }
+
+			   break;
+
+		   default:
+            if ((cur & TextCodec::MASK_80) != byte(0)) {
+				   if (dstIdx >= dstEnd)
+				      return -1;
+
+				   dst[dstIdx++] = TextCodec::ESCAPE_TOKEN1;
+            }
+
+            if (dstIdx >= dstEnd)
+				   return -1;
+
+			   dst[dstIdx++] = cur;
+		   }
+	   }
+   }
+
+	return dstIdx;
+}
+
+int TextCodec2::emitWordIndex(byte dst[], int val, int mask)
+{
+	// Emit word index (varint 5 bits + 7 bits + 7 bits)
+	// 1st byte: 0x80 => word idx, 0x40 => more bytes, 0x20 => toggle case 1st symbol
+	// 2nd byte: 0x80 => 1 more byte
+	if (val >= TextCodec::THRESHOLD3)
+	{
+		if (val >= TextCodec::THRESHOLD4)
+		{
+			// 5 + 7 + 7 => 2^19
+			dst[0] = byte(0xC0 | mask | ((val >> 14) & 0x1F));
+			dst[1] = byte(0x80 | ((val >> 7) & 0x7F));
+			dst[2] = byte(val & 0x7F);
+			return 3;
+		}
+
+		// 5 + 7 => 2^12 = 32*128
+		dst[0] = byte(0xC0 | mask | ((val >> 7) & 0x1F));
+		dst[1] = byte(val & 0x7F);
+		return 2;
+	}
+
+	// 5 => 32
+	dst[0] = byte(0x80 | mask | val);
+	return 1;
+}
+
+bool TextCodec2::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int count)
+{
+	byte* src = &input._array[input._index];
+	byte* dst = &output._array[output._index];
+	int srcIdx = 0;
+	int dstIdx = 0;
+	reset();
+	const int srcEnd = count;
+	const int dstEnd = output._length;
+	int delimAnchor = TextCodec::isText(src[srcIdx]) ? srcIdx - 1 : srcIdx; // previous delimiter
+	int words = _staticDictSize;
+	bool wordRun = false;
+	_isCRLF = (src[srcIdx++] & TextCodec::MASK_CRLF) != byte(0);
+
+	while ((srcIdx < srcEnd) && (dstIdx < dstEnd)) {
+		byte cur = src[srcIdx];
+
+		if (TextCodec::isText(cur)) {
+			dst[dstIdx] = cur;
+			srcIdx++;
+			dstIdx++;
+			continue;
+		}
+
+		if ((srcIdx > delimAnchor + 2) && TextCodec::isDelimiter(cur)) {
+			int32 h1 = TextCodec::HASH1;
+
+			for (int i = delimAnchor + 1; i < srcIdx; i++)
+				h1 = h1 * TextCodec::HASH1 ^ int32(src[i]) * TextCodec::HASH2;
+
+			// Lookup word in dictionary
+			const int length = srcIdx - delimAnchor - 1;
+			DictEntry* pe = _dictMap[h1 & _hashMask];
+
+			// Check for hash collisions
+			if (pe != nullptr) {
+				if ((pe->_hash != h1) || ((pe->_data >> 24) != length)) {
+					pe = nullptr;
+				}
+				else if (!TextCodec::sameWords(pe->_ptr + 1, &src[delimAnchor + 2], length - 1)) {
+					pe = nullptr;
+				}
+			}
+
+			if (pe == nullptr) {
+				// Word not found in the dictionary or hash collision: add or replace word
+				if (((length > 3) || ((length > 2) && (words < TextCodec::THRESHOLD2))) && (length < TextCodec::MAX_WORD_LENGTH)) {
+					DictEntry& e = _dictList[words];
+
+					if ((e._data & 0x00FFFFFF) >= _staticDictSize) {
+						// Reuse old entry
+						_dictMap[e._hash & _hashMask] = nullptr;
+						e._ptr = &src[delimAnchor + 1];
+						e._hash = h1;
+						e._data = (length << 24) | words;
+					}
+
+					_dictMap[h1 & _hashMask] = &e;
+					words++;
+
+					// Dictionary full ? Expand or reset index to end of static dictionary
+					if (words >= _dictSize) {
+						if (expandDictionary() == false)
+							words = _staticDictSize;
+					}
+				}
+			}
+		}
+
+		srcIdx++;
+
+		if ((cur & TextCodec::MASK_80) != byte(0)) {
+			// Word in dictionary
+			// Read word index (varint 5 bits + 7 bits + 7 bits)
+			int idx = int(cur & TextCodec::MASK_1F);
+
+			if ((cur & TextCodec::MASK_40) != byte(0)) {
+				int idx2 = int(src[srcIdx++]);
+
+				if ((idx2 & 0x80) != 0) {
+					idx = (idx << 7) | (idx2 & 0x7F);
+					idx2 = int(src[srcIdx++]);
+				}
+
+ 				idx = (idx << 7) | (idx2 & 0x7F);
+
+				if (idx >= _dictSize)
+					break;
+			}
+
+			const DictEntry& e = _dictList[idx];
+			const int length = e._data >> 24;
+			const byte* buf = e._ptr;
+
+			// Sanity check
+			if ((buf == nullptr) || (dstIdx + length >= dstEnd))
+				break;
+
+			// Add space if only delimiter between 2 words (not an escaped delimiter)
+			if ((wordRun == true) && (length > 1))
+				dst[dstIdx++] = TextCodec::SP;
+
+			// Emit word
+			if ((cur & TextCodec::MASK_20) == byte(0)) {
+				dst[dstIdx] = *buf;
+			}
+			else {
+				// Flip case of first character
+				dst[dstIdx] = TextCodec::isUpperCase(buf[0]) ? byte(uint8(buf[0]) + 32) : byte(uint8(buf[0]) - 32);
+			}
+
+			if (length > 1) {
+				memcpy(&dst[dstIdx+1], &buf[1], length-1);
+
+				// Regular word entry
+				wordRun = true;
+				delimAnchor = srcIdx;
+			}
+			else {
+				// Escape entry
+				wordRun = false;
+				delimAnchor = srcIdx - 1;
+			}
+
+			dstIdx += length;
+		}
+		else {
+			// Escape token followed by symbol > 0x80 ?
+			if (cur == TextCodec::ESCAPE_TOKEN1) {
+				dst[dstIdx++] = src[srcIdx++];
+			}
+			else {
+				if ((_isCRLF == true) && (cur == TextCodec::LF))
+					dst[dstIdx++] = TextCodec::CR;
+
+				dst[dstIdx++] = cur;
+			}
+
+			wordRun = false;
+			delimAnchor = srcIdx - 1;
+		}
+	}
+
+	output._index += dstIdx;
+	input._index += srcIdx;
+	return srcIdx == srcEnd;
+}
