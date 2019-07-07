@@ -18,6 +18,7 @@ limitations under the License.
 
 #include <cstddef>
 #include <stdlib.h>
+#include <cstdint>
 
 	#ifdef _MSC_VER
 		#if !defined(__x86_64__)
@@ -33,9 +34,6 @@ limitations under the License.
 	#endif
 
    #ifdef _MSC_VER
-      #if _MSC_VER >= 1910 && _MSC_VER <= 1916 
-         #define _MSC_VER_STR 2017
-      #endif
 	  #if _MSC_VER >= 1920 && _MSC_VER <= 1921 
 		 #define _MSC_VER_STR 2019
 	  #endif
@@ -43,7 +41,6 @@ limitations under the License.
 
 	#ifndef _GLIBCXX_USE_NOEXCEPT
 	#define _GLIBCXX_USE_NOEXCEPT
-	//#define _GLIBCXX_USE_NOEXCEPT throw()
 	#endif
 
 	#ifndef THROW
@@ -53,42 +50,10 @@ limitations under the License.
           #if defined(__GNUC__)
 		     #define THROW
           #else
-	         #define THROW throw(...)
+	         #define THROW noexcept(false)
           #endif
 	   #endif
 	#endif
-
-	#if __cplusplus >= 201103L
-	   // C++ 11
-	   #include <cstdint>
-	#else
-	   #if defined(_MSC_VER) && _MSC_VER < 1300
-	      typedef signed char int8_t;
-	      typedef signed short int16_t;
-	      typedef signed int int32_t;
-	      typedef unsigned char uint8_t;
-	      typedef unsigned short uint16_t;
-	      typedef unsigned int uint32_t;
-	   #else
-	      typedef signed __int8 int8_t;
-	      typedef signed __int16 int16_t;
-	      typedef signed __int32 int32_t;
-	      typedef unsigned __int8 uint8_t;
-	      typedef unsigned __int16 uint16_t;
-	      typedef unsigned __int32 uint32_t;
-	   #endif
-
-	   typedef signed __int64 int64_t;
-	   typedef unsigned __int64 uint64_t;
-	   #define nullptr NULL
-	#endif
-
-#if __cplusplus >= 201703L
-	// byte is defined in C++17 and above
-	#include <cstddef>
-#else
-	typedef int8_t byte;
-#endif
 
 	typedef int8_t int8;
 	typedef uint8_t uint8;
@@ -100,13 +65,11 @@ limitations under the License.
 	typedef uint32_t uint32;
 	typedef uint64_t uint64;
 
-
    #if defined(WIN32) || defined(_WIN32) 
       #define PATH_SEPARATOR '\\' 
    #else 
       #define PATH_SEPARATOR '/' 
    #endif
-
 
    #if defined(_MSC_VER)
       #define ALIGNED_(x) __declspec(align(x))
