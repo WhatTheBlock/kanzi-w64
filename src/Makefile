@@ -1,5 +1,5 @@
 CXX=g++
-CFLAGS=-c -std=c++14 -Wall -Wextra -O3 -fomit-frame-pointer -DNDEBUG -pedantic -march=native
+CFLAGS=-c -std=c++17 -Wall -Wextra -O3 -fomit-frame-pointer -DNDEBUG -pedantic -march=native
 LDFLAGS=-pthread
 LIB_SOURCES=Global.cpp \
 	Event.cpp \
