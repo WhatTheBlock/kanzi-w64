@@ -140,7 +140,12 @@ int processCommandLine(int argc, const char* argv[], map<string, string>& map)
         log.println("", true);
         log.println(APP_HEADER, true);
         stringstream extraHeader;
-        
+ 
+#ifdef __GNUC__  
+		extraHeader << "\nCompiled with gcc version ";
+		extraHeader << __GNUC__ << "." << __GNUC_MINOR__ << "." << __GNUC_PATCHLEVEL__;
+#endif
+
 #ifdef _MSC_VER 
         extraHeader << "\nCompiled with Visual Studio";
    #ifdef _MSC_VER_STR // see types.h 

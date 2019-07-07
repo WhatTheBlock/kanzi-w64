@@ -165,6 +165,7 @@
       <FloatingPointModel>Fast</FloatingPointModel>
       <OmitFramePointers>true</OmitFramePointers>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -180,8 +181,6 @@
     <ClCompile Include="app\BlockDecompressor.cpp" />
     <ClCompile Include="app\InfoPrinter.cpp" />
     <ClCompile Include="app\Kanzi.cpp" />
-    <ClCompile Include="bitstream\DebugInputBitStream.cpp" />
-    <ClCompile Include="bitstream\DebugOutputBitStream.cpp" />
     <ClCompile Include="bitstream\DefaultInputBitStream.cpp" />
     <ClCompile Include="bitstream\DefaultOutputBitStream.cpp" />
     <ClCompile Include="entropy\ANSRangeDecoder.cpp" />
@@ -213,10 +212,6 @@
     <ClCompile Include="Global.cpp" />
     <ClCompile Include="io\CompressedInputStream.cpp" />
     <ClCompile Include="io\CompressedOutputStream.cpp" />
-    <ClCompile Include="test\TestBWT.cpp" />
-    <ClCompile Include="test\TestDefaultBitStream.cpp" />
-    <ClCompile Include="test\TestEntropyCodec.cpp" />
-    <ClCompile Include="test\TestFunctions.cpp" />
     <ClCompile Include="transform\BWT.cpp" />
     <ClCompile Include="transform\BWTS.cpp" />
     <ClCompile Include="transform\DivSufSort.cpp" />
@@ -232,8 +227,6 @@
     <ClInclude Include="function\SRT.hpp" />
     <ClInclude Include="Memory.hpp" />
     <ClInclude Include="BitStreamException.hpp" />
-    <ClInclude Include="bitstream\DebugInputBitStream.hpp" />
-    <ClInclude Include="bitstream\DebugOutputBitStream.hpp" />
     <ClInclude Include="bitstream\DefaultInputBitStream.hpp" />
     <ClInclude Include="bitstream\DefaultOutputBitStream.hpp" />
     <ClInclude Include="concurrent.hpp" />
