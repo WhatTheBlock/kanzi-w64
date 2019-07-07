@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2017 Frederic Langlet
+Copyright 2011-2019 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -29,24 +29,9 @@ limitations under the License.
 	#endif
 
 	#ifdef __x86_64__
-	   #include <emmintrin.h>
+	   #include <emmintrin.h> //SSE2
 	#endif
 
-   /*
-   MSVC++ 14.1 _MSC_VER == 1912 (Visual Studio 2017)
-   MSVC++ 14.1 _MSC_VER == 1911 (Visual Studio 2017)
-   MSVC++ 14.1 _MSC_VER == 1910 (Visual Studio 2017)
-   MSVC++ 14.0 _MSC_VER == 1900 (Visual Studio 2015)
-   MSVC++ 12.0 _MSC_VER == 1800 (Visual Studio 2013)
-   MSVC++ 11.0 _MSC_VER == 1700 (Visual Studio 2012)
-   MSVC++ 10.0 _MSC_VER == 1600 (Visual Studio 2010)
-   MSVC++ 9.0  _MSC_VER == 1500 (Visual Studio 2008)
-   MSVC++ 8.0  _MSC_VER == 1400 (Visual Studio 2005)
-   MSVC++ 7.1  _MSC_VER == 1310 (Visual Studio 2003)
-   MSVC++ 7.0  _MSC_VER == 1300
-   MSVC++ 6.0  _MSC_VER == 1200
-   MSVC++ 5.0  _MSC_VER == 1100
-   */
    #ifdef _MSC_VER
       #if _MSC_VER == 1300
          #define _MSC_VER_STR 2003
@@ -69,9 +54,12 @@ limitations under the License.
       #if _MSC_VER == 1900
          #define _MSC_VER_STR 2015
       #endif 
-      #if _MSC_VER >= 1910 && _MSC_VER <= 1912 
+      #if _MSC_VER >= 1910 && _MSC_VER <= 1916 
          #define _MSC_VER_STR 2017
       #endif
+	  #if _MSC_VER == 1920
+		 #define _MSC_VER_STR 2019
+	  #endif
    #endif
 
 	#ifndef _GLIBCXX_USE_NOEXCEPT
