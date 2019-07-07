@@ -1,10 +1,7 @@
 kanzi-w64
 =====
 
-由於原專案使用Visual Studio 2019編譯會出錯，所以稍微修改了一下<br>
-就建一個分支版本，未來打算把help資訊中文化，方便新手使用，另外，<br>
-雖說原作者也有提供make檔，但是使用Mingw-w64 8.1.0編譯就跳整面的<br>
-錯誤，所以這個分支版本只會為Visual Studio 2019做適配。<br><br>
+這個分支版本只會為Visual Studio 2019做適配，未來會把help資訊中文化，方便新手使用<br><br>
 
 kanzi為無損的檔案壓縮工具，保有高壓縮率的同時也大幅降低花費時間<br>
 下方提供各壓縮工具的實測數據，歡迎比較。<br><br>
@@ -25,7 +22,7 @@ i7-6700HQ @2.60GHz, 20GB RAM, Windows 10 LTSB 2016 (x64)
 4. 7-Zip v19.00
 5. BCM v1.30
 6. zpaq v7.05
-7. Kanzi v1.5 build 20190702
+7. Kanzi v1.5 build 20190703
 8. Paq8px v178
 9. Paq8pxd v63
 10. cmix v17 <br><br>
