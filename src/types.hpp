@@ -33,31 +33,10 @@ limitations under the License.
 	#endif
 
    #ifdef _MSC_VER
-      #if _MSC_VER == 1300
-         #define _MSC_VER_STR 2003
-      #endif 
-      #if _MSC_VER == 1400
-         #define _MSC_VER_STR 2005
-      #endif 
-      #if _MSC_VER == 1500
-         #define _MSC_VER_STR 2008
-      #endif 
-      #if _MSC_VER == 1600
-         #define _MSC_VER_STR 2010
-      #endif 
-      #if _MSC_VER == 1700
-         #define _MSC_VER_STR 2012
-      #endif 
-      #if _MSC_VER == 1800
-         #define _MSC_VER_STR 2013
-      #endif 
-      #if _MSC_VER == 1900
-         #define _MSC_VER_STR 2015
-      #endif 
       #if _MSC_VER >= 1910 && _MSC_VER <= 1916 
          #define _MSC_VER_STR 2017
       #endif
-	  #if _MSC_VER == 1920
+	  #if _MSC_VER >= 1920 && _MSC_VER <= 1921 
 		 #define _MSC_VER_STR 2019
 	  #endif
    #endif
