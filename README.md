@@ -42,7 +42,7 @@ i7-6700HQ @2.60GHz, 20GB RAM, Windows 10 LTSB 2016 (x64)
 |paq8pxd -s15                   |?	         |?               |15,967,201    |44.1%           |
 |cmix                           |?               |?               |14,877,373    |41.1%           |
 
-<br><br>
+<br>
 
 ### 2. Silesia corpus benchmark
 |        Compressor             | Encoding (sec) | Decoding (sec) | Size (Byte)  | compare to zip |
