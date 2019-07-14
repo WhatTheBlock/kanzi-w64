@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2017 Frederic Langlet
+Copyright 2011-2019 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -69,7 +69,7 @@ namespace kanzi
 
        // Update fields with new interval bounds
        if (bit == 0) 
-          _low = _low + split + 1;
+		   _low += (split + 1);
        else 
           _high = _low + split;
 
