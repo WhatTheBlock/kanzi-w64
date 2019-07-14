@@ -30,7 +30,8 @@ limitations under the License.
 	#endif
 
 	#ifdef __x86_64__
-	   #include <emmintrin.h> //SSE2
+		#include <emmintrin.h> //SSE2
+		#include <intrin.h> //SSE4A, AVX, AVX2
 	#endif
 
    #ifdef _MSC_VER
