@@ -14,7 +14,7 @@ kanzi為無損的檔案壓縮工具，保有高壓縮率的同時也大幅降低
 測試數據
 -------
 #### 測試平台：
-i7-6700HQ @2.60GHz, 20GB RAM, Windows 10 LTSB 2016 (x64)
+i7-6700HQ @2.60GHz, 20GB RAM, Windows 10 Pro 1903 (x64)
 
 #### 測試的壓縮工具：
 1. WinRAR v5.71.0
@@ -22,7 +22,7 @@ i7-6700HQ @2.60GHz, 20GB RAM, Windows 10 LTSB 2016 (x64)
 3. UHARC v0.6a
 4. 7-Zip v19.00
 5. BCM v1.30
-6. Kanzi v1.6 build 20190708
+6. Kanzi v1.6 build 20190715g
 7. Paq8px v178
 8. Paq8pxd v63
 9. cmix v17 <br><br>
@@ -37,12 +37,10 @@ i7-6700HQ @2.60GHz, 20GB RAM, Windows 10 LTSB 2016 (x64)
 |uharc -mx -md32768             |94 	         |74.2            |23,911,123    |66.0%           |
 |7z -m0=ppmd:o32:mem1024m -mx9  |41.06           |42.78           |21,918,001    |60.5%           |
 |bcm -b100m                     |23.88           |31.45           |20,789,664    |57.4%           |
-|**kanzi -l 8 -b 100m**         |**57.72**       |**57.49**       |**19,163,098**|52.9%           |
+|**kanzi -l 8 -b 100m**         |**46.94**       |**48.26**       |**19,163,098**|52.9%           |
 |paq8px -9eta                   |20462.48        |21376.88        |16,457,780    |45.4%           |
 |paq8pxd -s15                   |?	         |?               |15,967,201    |44.1%           |
 |cmix                           |?               |?               |14,877,373    |41.1%           |
-
-<br>
 
 ### 2. Silesia corpus benchmark
 |        Compressor             | Encoding (sec) | Decoding (sec) | Size (Byte)  | compare to zip |
@@ -57,6 +55,8 @@ i7-6700HQ @2.60GHz, 20GB RAM, Windows 10 LTSB 2016 (x64)
 |**kanzi -l 8 -b 100m -j 6**    |**55.92**       |**57.37**       |**40,502,391**|60.1%           |
 |cmix                           |?               |?               |28,632,023    |42.4%           |
 
+<br>
+
 #### 備註：
 - 所有數據皆以該壓縮工具的最佳壓縮率為主，第一筆數據例外，因Zip將作為基準點
 - 順序以壓縮後檔案由大到小排列
@@ -64,7 +64,7 @@ i7-6700HQ @2.60GHz, 20GB RAM, Windows 10 LTSB 2016 (x64)
 - 下載[enwik8測試檔](http://mattmahoney.net/dc/enwik8.zip)
 - 下載[Silesia測試檔](http://mattmahoney.net/dc/silesia.zip)
 
-<br><br>
+<br>
 
 使用方式
 -------
