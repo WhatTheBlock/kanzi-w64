@@ -74,7 +74,7 @@ namespace kanzi {
        XXHash32* _hasher;
        atomic_int* _processedBlockId;
        vector<Listener*> _listeners;
-       map<string, string> _ctx;
+	   Context _ctx;
 
    public:
        EncodingTask(SliceArray<byte>* iBuffer, SliceArray<byte>* oBuffer, int length,
