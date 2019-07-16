@@ -403,7 +403,7 @@ int BlockCompressor::compress(uint64& outputSize)
             }
 
 			Context taskCtx(ctx);
-			taskCtx.putInt("fileSize", int(files[i]._size));
+			taskCtx.putLong("fileSize", files[i]._size);
 			taskCtx.putString("inputName", iName);
 			taskCtx.putString("outputName", oName);
 			taskCtx.putInt("jobs", jobsPerTask[n++]);
