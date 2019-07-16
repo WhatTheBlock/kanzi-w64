@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2017 Frederic Langlet
+Copyright 2011-2019 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -16,7 +16,7 @@ limitations under the License.
 #ifndef _ROLZCodec_
 #define _ROLZCodec_
 
-#include <map>
+#include "../Context.hpp"
 #include "../Function.hpp"
 #include "../Memory.hpp"
 #include "../Predictor.hpp"
@@ -177,7 +177,7 @@ namespace kanzi {
 	public:
 		ROLZCodec(uint logPosChecks = LOG_POS_CHECKS2) THROW;
 
-		ROLZCodec(map<string, string>& ctx) THROW;
+		ROLZCodec(Context& ctx) THROW;
 
 		virtual ~ROLZCodec()
 		{

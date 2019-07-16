@@ -221,6 +221,7 @@
     <ClInclude Include="app\BlockCompressor.hpp" />
     <ClInclude Include="app\BlockDecompressor.hpp" />
     <ClInclude Include="app\InfoPrinter.hpp" />
+    <ClInclude Include="Context.hpp" />
     <ClInclude Include="function\FunctionFactory.hpp" />
     <ClInclude Include="function\LZCodec.hpp" />
     <ClInclude Include="function\ROLZCodec.hpp" />

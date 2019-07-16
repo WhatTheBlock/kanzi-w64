@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2017 Frederic Langlet
+Copyright 2011-2019 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -16,7 +16,7 @@ limitations under the License.
 #ifndef _TextCodec_
 #define _TextCodec_
 
-#include <map>
+#include "../Context.hpp"
 #include "../Function.hpp"
 
 using namespace std;
@@ -44,7 +44,7 @@ namespace kanzi {
    public:
        TextCodec1();
 
-       TextCodec1(map<string, string>& ctx);
+       TextCodec1(Context& ctx);
 
        virtual ~TextCodec1()
        {
@@ -81,7 +81,7 @@ namespace kanzi {
    public:
        TextCodec2();
 
-       TextCodec2(map<string, string>& ctx);
+       TextCodec2(Context& ctx);
 
        virtual ~TextCodec2()
        {
@@ -131,7 +131,7 @@ namespace kanzi {
 
        TextCodec();
 
-       TextCodec(map<string, string>& ctx);
+       TextCodec(Context& ctx);
 
        virtual ~TextCodec()
        {

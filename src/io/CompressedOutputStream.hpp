@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2017 Frederic Langlet
+Copyright 2011-2019 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -16,10 +16,10 @@ limitations under the License.
 #ifndef _CompressedOutputStream_
 #define _CompressedOutputStream_
 
-#include <map>
 #include <string>
 #include <vector>
 #include "../concurrent.hpp"
+#include "../Context.hpp"
 #include "../Listener.hpp"
 #include "../OutputStream.hpp"
 #include "../OutputBitStream.hpp"
@@ -81,7 +81,7 @@ namespace kanzi {
            uint64 transformType, uint32 entropyType, int blockId,
            OutputBitStream* obs, XXHash32* hasher,
            atomic_int* processedBlockId, vector<Listener*>& listeners,
-           map<string, string>& ctx);
+		   Context& ctx);
 
        ~EncodingTask(){};
 
@@ -116,7 +116,7 @@ namespace kanzi {
        atomic_int _blockId;
        int _jobs;
        vector<Listener*> _listeners;
-       map<string, string> _ctx;
+	   Context _ctx;
 
        void writeHeader() THROW;
 
@@ -127,7 +127,7 @@ namespace kanzi {
    public:
        CompressedOutputStream(OutputStream& os, const string& codec, const string& transform, int blockSize, int jobs, bool checksum);
        
-       CompressedOutputStream(OutputStream& os, map<string, string>& ctx);
+       CompressedOutputStream(OutputStream& os, Context& ctx);
 
        ~CompressedOutputStream();
 

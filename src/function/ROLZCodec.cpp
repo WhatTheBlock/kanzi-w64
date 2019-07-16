@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2017 Frederic Langlet
+Copyright 2011-2019 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -31,13 +31,9 @@ ROLZCodec::ROLZCodec(uint logPosChecks) THROW
     _delegate = new ROLZCodec1(logPosChecks);
 }
 
-ROLZCodec::ROLZCodec(map<string, string>& ctx) THROW
+ROLZCodec::ROLZCodec(Context& ctx) THROW
 {
-    string transform = "NONE";
-
-    if (ctx.find("transform") != ctx.end()) {
-        transform = ctx["transform"];
-    }
+	string transform = ctx.getString("transform", "NONE");
 
     _delegate = (transform.find("ROLZX") != string::npos) ? (Function<byte>*) new ROLZCodec2(LOG_POS_CHECKS2) : 
        (Function<byte>*) new ROLZCodec1(LOG_POS_CHECKS1);
