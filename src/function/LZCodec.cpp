@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2017 Frederic Langlet
+Copyright 2011-2019 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -72,6 +72,7 @@ bool LZCodec::forward(SliceArray<byte>& input, SliceArray<byte>& output, int cou
     if (count > MIN_LENGTH) {
         if (_bufferSize < (1 << hashLog)) {
             _bufferSize = 1 << hashLog;
+			delete[] _buffer;
             _buffer = new int[_bufferSize];
         } 
 
