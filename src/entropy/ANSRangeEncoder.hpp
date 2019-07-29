@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2017 Frederic Langlet
+Copyright 2011-2019 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -56,7 +56,7 @@ namespace kanzi
    class ANSRangeEncoder : public EntropyEncoder
    {
    public:
-	   static const int ANS_TOP = 1 << 15;
+	   static const int ANS_TOP = 1 << 15; // max possible for ANS_TOP=1<23
 
 	   ANSRangeEncoder(OutputBitStream& bitstream,
                       int order = 0,
@@ -76,7 +76,7 @@ namespace kanzi
 
    private:
 	   static const int DEFAULT_ANS0_CHUNK_SIZE = 1 << 15; // 32 KB by default
-	   static const int DEFAULT_LOG_RANGE = 13; // max possible for ANS_TOP=1<23
+	   static const int DEFAULT_LOG_RANGE = 12;
 	   static const int MAX_CHUNK_SIZE = 1 << 27; // 8*MAX_CHUNK_SIZE must not overflow
 
 	   uint* _alphabet;
