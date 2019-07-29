@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2017 Frederic Langlet
+Copyright 2011-2019 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -52,7 +52,7 @@ namespace kanzi {
        // Required encoding output buffer size
        int getMaxEncodedLength(int srcLen) const
        {
-           return srcLen + BWT_MAX_HEADER_SIZE + BWT::maxBlockSize();
+           return srcLen + BWT_MAX_HEADER_SIZE;
        }
 
    private:
