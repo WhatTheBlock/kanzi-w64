@@ -1,6 +1,8 @@
 kanzi-w64
 =====
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/1385470b92804ac0a6854b71de5ee28d)](https://www.codacy.com/app/WhatTheBlock/kanzi-w64?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=WhatTheBlock/kanzi-w64&amp;utm_campaign=Badge_Grade)
+
 此版本主要專注在修正Windows平台的編譯錯誤，並釋出x64執行檔<br>
 未來也會找時間把help資訊中文化，方便新手使用<br><br>
 
