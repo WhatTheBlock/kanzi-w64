@@ -93,8 +93,9 @@ namespace kanzi {
            return new NullEntropyDecoder(ibs);
 
        default:
-           string msg = "Unknown entropy codec type: ";
+           string msg = "Unknown entropy codec type: '";
            msg += char(entropyType);
+		   msg += '\'';
            throw invalid_argument(msg);
        }
    }
@@ -130,8 +131,9 @@ namespace kanzi {
            return new NullEntropyEncoder(obs);
 
        default:
-           string msg = "Unknown entropy codec type: ";
+           string msg = "Unknown entropy codec type: '";
            msg += char(entropyType);
+		   msg += '\'';
            throw invalid_argument(msg);
        }
    }
@@ -167,8 +169,9 @@ namespace kanzi {
            return "NONE";
 
        default:
-           string msg = "Unknown entropy codec type: ";
+           string msg = "Unknown entropy codec type: '";
            msg += char(entropyType);
+		   msg += '\'';
            throw invalid_argument(msg);
        }
    }
@@ -205,7 +208,7 @@ namespace kanzi {
        if (name == "NONE")
            return NONE_TYPE;
 
-       throw invalid_argument("Unsupported entropy codec type: " + name);
+	   throw invalid_argument("Unsupported entropy codec type: '" + name + "'");
    }
 }
 #endif
