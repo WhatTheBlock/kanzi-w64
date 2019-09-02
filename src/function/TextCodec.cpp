@@ -985,8 +985,9 @@ bool TextCodec1::forward(SliceArray<byte>& input, SliceArray<byte>& output, int 
 				}
 
 				if (pe == nullptr) {
-					// Word not found in the dictionary or hash collision: add or replace word
-					if ((length > 3) || ((length > 2) && (words < TextCodec::THRESHOLD2))) {
+					// Word not found in the dictionary or hash collision.
+					// Replace entry if not in static dictionary
+					if (((length > 3) || ((length > 2) && (words < TextCodec::THRESHOLD2))) && (pe1 == nullptr)) {
 						DictEntry* pe = &_dictList[words];
 
 						if ((pe->_data & 0x00FFFFFF) >= _staticDictSize) {
@@ -1185,8 +1186,9 @@ bool TextCodec1::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int 
 				}
 
 				if (pe == nullptr) {
-					// Word not found in the dictionary or hash collision: add or replace word
-					if ((length > 3) || ((length > 2) && (words < TextCodec::THRESHOLD2))) {
+					// Word not found in the dictionary or hash collision.
+					// Replace entry if not in static dictionary
+					if (((length > 3) || ((length > 2) && (words < TextCodec::THRESHOLD2))) && (pe1 == nullptr)) {
 						DictEntry& e = _dictList[words];
 
 						if ((e._data & 0x00FFFFFF) >= _staticDictSize) {
@@ -1438,9 +1440,9 @@ bool TextCodec2::forward(SliceArray<byte>& input, SliceArray<byte>& output, int 
 				}
 
 				if (pe == nullptr) {
-					// Word not found in the dictionary or hash collision (outside of
-					// static dictionary) => replace entry
-					if ((length > 3) || ((length > 2) && (words < TextCodec::THRESHOLD2))) {
+					// Word not found in the dictionary or hash collision.
+					// Replace entry if not in static dictionary
+					if (((length > 3) || ((length > 2) && (words < TextCodec::THRESHOLD2))) && (pe1 == nullptr)) {
 						DictEntry* pe = &_dictList[words];
 
 						if ((pe->_data & 0x00FFFFFF) >= _staticDictSize) {
@@ -1676,9 +1678,9 @@ bool TextCodec2::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int 
 				}
 
 				if (pe == nullptr) {
-					// Word not found in the dictionary or hash collision (outside of
-					// static dictionary) => replace entry
-					if ((length > 3) || ((length > 2) && (words < TextCodec::THRESHOLD2))) {
+					// Word not found in the dictionary or hash collision.
+					// Replace entry if not in static dictionary
+					if (((length > 3) || ((length > 2) && (words < TextCodec::THRESHOLD2))) && (pe1 == nullptr)) {
 						DictEntry& e = _dictList[words];
 
 						if ((e._data & 0x00FFFFFF) >= _staticDictSize) {
