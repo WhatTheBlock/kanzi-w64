@@ -1,6 +1,6 @@
 
 /*
-Copyright 2011-2017 Frederic Langlet
+Copyright 2011-2019 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -382,13 +382,12 @@ bool BWT::inverseBigBlock(SliceArray<byte>& input, SliceArray<byte>& output, int
         }
 
         // Wait for completion of all concurrent tasks
-        for (int j = 0; j < nbTasks; j++) {
-            futures[j].get();
-        }
+        for (int j = 0; j < nbTasks; j++)
+			futures[j].get();
 
         // Cleanup
-        for (vector<InverseBigChunkTask<int>*>::iterator it = tasks.begin(); it != tasks.end(); it++)
-            delete *it;
+		for (InverseBigChunkTask<int>* task : tasks)
+			delete task;
 
         tasks.clear();
         delete[] jobsPerTask;
