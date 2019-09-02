@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2017 Frederic Langlet
+Copyright 2011-2019 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -225,7 +225,7 @@ namespace kanzi
            Function<T>* f = dynamic_cast<Function<T>*>(_transforms[i]);
 
            if (f != nullptr) {
-               int reqSize = f->getMaxEncodedLength(srcLength);
+			   const int reqSize = f->getMaxEncodedLength(requiredSize);
 
                if (reqSize > requiredSize)
                    requiredSize = reqSize;
