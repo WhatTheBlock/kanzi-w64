@@ -124,13 +124,16 @@ namespace kanzi {
 		}
 
 	private:
+		static const int MIN_MATCH = 3;
+		static const int MAX_MATCH = MIN_MATCH + 255 + 7;
+
 		int32* _matches;
 		int32 _counters[65536];
 		int _logPosChecks;
 		int _maskChecks;
 		int _posChecks;
 
-		int findMatch(const byte buf[], const int pos, const int end);	
+		int findMatch(const byte buf[], const int pos, const int end);
 
 		void emitLengths(SliceArray<byte>& lenBuf, int litLen, int mLen);
 
@@ -157,6 +160,8 @@ namespace kanzi {
 	private:
 		static const int LITERAL_FLAG = 0;
 		static const int MATCH_FLAG = 1;
+		static const int MIN_MATCH = 3;
+		static const int MAX_MATCH = MIN_MATCH + 255;
 
 		int32* _matches;
 		int32 _counters[65536];
@@ -192,8 +197,6 @@ namespace kanzi {
 
 	private:
 		static const int HASH_SIZE = 1 << 16;
-		static const int MIN_MATCH = 3;
-		static const int MAX_MATCH = MIN_MATCH + 255;
 		static const int LOG_POS_CHECKS1 = 4;
 		static const int LOG_POS_CHECKS2 = 5;
 		static const int CHUNK_SIZE = 1 << 26; // 64 MB
