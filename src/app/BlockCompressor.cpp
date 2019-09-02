@@ -207,7 +207,7 @@ int BlockCompressor::compress(uint64& outputSize)
 		try {
 			createFileList(_inputName, files);
 		}
-		catch (exception& e) {
+		catch (IOException& e) {
 			cerr << e.what() << endl;
 			return Error::ERR_OPEN_FILE;
 		}
