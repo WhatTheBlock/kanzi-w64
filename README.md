@@ -27,7 +27,7 @@ i7-6700HQ @2.60GHz, 20GB RAM, Windows 10 Pro 1903 (x64)
 6. Kanzi v1.6 build 20190903c
 7. Paq8px v178
 8. Paq8pxd v63
-9. cmix v17 <br><br>
+9. cmix v18 <br><br>
 
 ### 1. enwik8 benchmark
 |        Compressor             | Encoding (sec) | Decoding (sec) | Size (Byte)  | compare to zip |
@@ -42,7 +42,7 @@ i7-6700HQ @2.60GHz, 20GB RAM, Windows 10 Pro 1903 (x64)
 |**kanzi -l 8 -b 100m**         |**50.57**       |**52.11**       |**19,142,982**|52.8%           |
 |paq8px -9eta                   |20462.48        |21376.88        |16,457,780    |45.4%           |
 |paq8pxd -s15                   |?	         |?               |15,967,201    |44.1%           |
-|cmix                           |?               |?               |14,877,373    |41.1%           |
+|cmix                           |?               |?               |14,838,332    |40.9%           |
 
 ### 2. Silesia corpus benchmark
 |        Compressor             | Encoding (sec) | Decoding (sec) | Size (Byte)  | compare to zip |
@@ -55,7 +55,7 @@ i7-6700HQ @2.60GHz, 20GB RAM, Windows 10 Pro 1903 (x64)
 |bcm -b100m                     |-               |-               |46,506,680    |69.0%           |
 |uharc -mx -md32768             |124.2	         |109.2           |45,172,307    |67.0%           |
 |**kanzi -l 8 -b 100m -j 6**    |**56.19**       |**56.49**       |**40,477,451**|60.0%           |
-|cmix                           |?               |?               |28,632,023    |42.4%           |
+|cmix                           |?               |?               |28,437,634    |42.4%           |
 
 <br>
 
