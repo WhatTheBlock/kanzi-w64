@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2019 Frederic Langlet
+Copyright 2011-2020 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -159,8 +159,10 @@ CompressedOutputStream::~CompressedOutputStream()
         // Ignore and continue
     }
 
-    for (int i = 0; i < 2 * _jobs; i++)
+    for (int i = 0; i < 2 * _jobs; i++) {
         delete[] _buffers[i]->_array;
+        delete _buffers[i];
+    }
 
     delete[] _buffers;
     delete _obs;

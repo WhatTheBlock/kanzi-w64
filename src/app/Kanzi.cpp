@@ -1,6 +1,6 @@
 
 /*
-Copyright 2011-2019 Frederic Langlet
+Copyright 2011-2020 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -39,7 +39,7 @@ static const int ARG_IDX_JOBS = 7;
 static const int ARG_IDX_VERBOSE = 8;
 static const int ARG_IDX_LEVEL = 9;
 
-static const char* APP_HEADER = "Kanzi 1.6 (C) 2019,  Frederic Langlet";
+static const char* APP_HEADER = "Kanzi 1.7 (C) 2020,  Frederic Langlet";
 
 
 #ifdef CONCURRENCY_ENABLED

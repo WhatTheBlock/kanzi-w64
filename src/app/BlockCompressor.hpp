@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2019 Frederic Langlet
+Copyright 2011-2020 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -96,9 +96,9 @@ namespace kanzi {
 
        int compress(uint64& written);
 
-       bool addListener(Listener* bl);
+       bool addListener(Listener& bl);
 
-       bool removeListener(Listener* bl);
+       bool removeListener(Listener& bl);
 
        void dispose();
 
