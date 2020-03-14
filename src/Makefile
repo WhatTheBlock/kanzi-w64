@@ -1,5 +1,5 @@
 CXX=g++
-CFLAGS=-c -std=c++17 -Wall -Wextra -O3 -fomit-frame-pointer -DNDEBUG -pedantic -march=native
+CFLAGS=-c -std=c++17 -Wall -Wextra -O3 -fomit-frame-pointer -fPIC -DNDEBUG -pedantic -march=native
 LDFLAGS=-pthread
 LIB_SOURCES=Global.cpp \
 	Event.cpp \
@@ -54,12 +54,11 @@ APP=kanzi
 STATIC_LIB_SUFFIX := .lib
 SHARED_LIB_SUFFIX := .dll
 PROG_SUFFIX       := .exe
-SHARED_LIB_CFLAGS := 
 
 STATIC_LIB := lib$(APP)$(STATIC_LIB_SUFFIX)
 SHARED_LIB := lib$(APP)$(SHARED_LIB_SUFFIX)
 
-all: $(TESTS) $(APP) $(STATIC_LIB)
+all: $(STATIC_LIB) $(SHARED_LIB) $(APP)
 
 # Create static library
 $(STATIC_LIB):$(LIB_OBJECTS)
@@ -67,7 +66,7 @@ $(STATIC_LIB):$(LIB_OBJECTS)
 
 # Create shared library
 $(SHARED_LIB):$(LIB_OBJECTS)
-	$(CXX) -o ../lib/$@ $(LDFLAGS) $(SHARED_LIB_CFLAGS) -shared $+
+	$(CXX) -o ../lib/$@ $(LDFLAGS) -shared $+
 
 kanzi: $(OBJECTS) app/Kanzi.o
 	$(CXX) $^ -o ../bin/$@ $(LDFLAGS)
