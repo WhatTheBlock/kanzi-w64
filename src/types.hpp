@@ -80,4 +80,7 @@ limitations under the License.
       #endif
    #endif
 
+	static const char* STR_TRUE = "TRUE";
+	static const char* STR_FALSE = "FALSE";
+
 #endif
