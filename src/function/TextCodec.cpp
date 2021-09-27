@@ -4,7 +4,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
 
-                http://www.apache.org/licenses/LICENSE-2.0
+				http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -671,7 +671,7 @@ byte TextCodec::computeStats(const byte block[], int count, int32 freqs0[])
 		prv = cur3;
 	}
 
-	for (int i = count4; i<count; i++) {
+	for (int i = count4; i < count; i++) {
 		freqs0[data[i]]++;
 		freqs[prv][data[i]]++;
 		prv = data[i];
@@ -707,7 +707,7 @@ byte TextCodec::computeStats(const byte block[], int count, int32 freqs0[])
 		res |= TextCodec::MASK_FULL_ASCII;
 	else if (nbBinChars <= count / 100)
 		res |= TextCodec::MASK_ALMOST_FULL_ASCII;
-      
+
 	if (nbBinChars <= count - count / 10) {
 		// Check if likely XML/HTML
 		// Another crude test: check that the frequencies of < and > are similar
@@ -716,25 +716,25 @@ byte TextCodec::computeStats(const byte block[], int count, int32 freqs0[])
 		const int32 f1 = freqs0[60]; // '<'
 		const int32 f2 = freqs0[62]; // '>'
 		const int32 f3 = freqs[38][97] + freqs[38][103] + freqs[38][108] + freqs[38][113]; // '&a', '&g', '&l', '&q'
-		const int32 minFreq = (((count - nbBinChars) >> 9) < 2) ? 2 : (count - nbBinChars) >> 9;         
-         
+		const int32 minFreq = (((count - nbBinChars) >> 9) < 2) ? 2 : (count - nbBinChars) >> 9;
+
 		if ((f1 >= minFreq) && (f2 >= minFreq) && (f3 > 0)) {
-			if (f1 < f2) { 
-				if (f1 >= (f2 - f2 / 100)) 
+			if (f1 < f2) {
+				if (f1 >= (f2 - f2 / 100))
 					res |= TextCodec::MASK_XML_HTML;
 			}
-			else if (f2 < f1)  {
-				if (f2 >= (f1 - f1 / 100))            
+			else if (f2 < f1) {
+				if (f2 >= (f1 - f1 / 100))
 					res |= TextCodec::MASK_XML_HTML;
-			} 
-			else 
+			}
+			else
 				res |= TextCodec::MASK_XML_HTML;
- 		}
+		}
 	}
 
 	// Check CR+LF matches
-    const int cr = int(CR);
-    const int lf = int(LF);
+	const int cr = int(CR);
+	const int lf = int(LF);
 
 	if ((freqs0[cr] != 0) && (freqs0[cr] == freqs0[lf])) {
 		res |= TextCodec::MASK_CRLF;
@@ -764,52 +764,52 @@ TextCodec::TextCodec(Context& ctx)
 
 bool TextCodec::forward(SliceArray<byte>& input, SliceArray<byte>& output, int count) THROW
 {
-    if (count == 0)
-        return true;
+	if (count == 0)
+		return true;
 
-    if (!SliceArray<byte>::isValid(input))
-        throw invalid_argument("Invalid input block");
+	if (!SliceArray<byte>::isValid(input))
+		throw invalid_argument("Invalid input block");
 
-    if (!SliceArray<byte>::isValid(output))
-        throw invalid_argument("Invalid output block");
+	if (!SliceArray<byte>::isValid(output))
+		throw invalid_argument("Invalid output block");
 
-    if (input._array == output._array)
-        return false;
+	if (input._array == output._array)
+		return false;
 
-    if (count > MAX_BLOCK_SIZE) {
-        // Not a recoverable error: instead of silently fail the transform,
-        // issue a fatal error.
-        stringstream ss;
-        ss << "The max text transform block size is " << MAX_BLOCK_SIZE << ", got " << count;
-        throw invalid_argument(ss.str());
-    }
+	if (count > MAX_BLOCK_SIZE) {
+		// Not a recoverable error: instead of silently fail the transform,
+		// issue a fatal error.
+		stringstream ss;
+		ss << "The max text transform block size is " << MAX_BLOCK_SIZE << ", got " << count;
+		throw invalid_argument(ss.str());
+	}
 
-    return _delegate->forward(input, output, count);
+	return _delegate->forward(input, output, count);
 }
 
 bool TextCodec::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int count) THROW
 {
-    if (count == 0)
-        return true;
+	if (count == 0)
+		return true;
 
-    if (!SliceArray<byte>::isValid(input))
-        throw invalid_argument("Invalid input block");
+	if (!SliceArray<byte>::isValid(input))
+		throw invalid_argument("Invalid input block");
 
-    if (!SliceArray<byte>::isValid(output))
-        throw invalid_argument("Invalid output block");
+	if (!SliceArray<byte>::isValid(output))
+		throw invalid_argument("Invalid output block");
 
-    if (input._array == output._array)
-        return false;
+	if (input._array == output._array)
+		return false;
 
-    if (count > MAX_BLOCK_SIZE) {
-        // Not a recoverable error: instead of silently fail the transform,
-        // issue a fatal error.
-        stringstream ss;
-        ss << "The max text transform block size is " << MAX_BLOCK_SIZE << ", got " << count;
-        throw invalid_argument(ss.str());
-    }
+	if (count > MAX_BLOCK_SIZE) {
+		// Not a recoverable error: instead of silently fail the transform,
+		// issue a fatal error.
+		stringstream ss;
+		ss << "The max text transform block size is " << MAX_BLOCK_SIZE << ", got " << count;
+		throw invalid_argument(ss.str());
+	}
 
-    return _delegate->inverse(input, output, count);
+	return _delegate->inverse(input, output, count);
 }
 
 
@@ -833,7 +833,7 @@ TextCodec1::TextCodec1(Context& ctx)
 
 	if (ctx.has("blockSize")) {
 		blockSize = ctx.getInt("blockSize");
-		
+
 		if (blockSize >= 8)
 			log = max(min(Global::log2(blockSize / 8), 26), 13);
 
@@ -934,7 +934,7 @@ bool TextCodec1::forward(SliceArray<byte>& input, SliceArray<byte>& output, int 
 		if ((srcIdx > delimAnchor + 2) && TextCodec::isDelimiter(src[srcIdx])) { // At least 2 letters
 			const byte val = src[delimAnchor + 1];
 			const int length = srcIdx - delimAnchor - 1;
-			
+
 			if (length <= TextCodec::MAX_WORD_LENGTH) {
 				// Compute hashes
 				// h1 -> hash of word chars
@@ -1031,9 +1031,9 @@ bool TextCodec1::forward(SliceArray<byte>& input, SliceArray<byte>& output, int 
 		// Emit last symbols
 		const int dIdx = emitSymbols(&src[emitAnchor], &dst[dstIdx], srcEnd - emitAnchor, dstEnd - dstIdx);
 
-		if (dIdx < 0) 
+		if (dIdx < 0)
 			res = false;
-		else 
+		else
 			dstIdx += dIdx;
 
 		res &= (srcIdx == srcEnd);
@@ -1092,7 +1092,7 @@ int TextCodec1::emitSymbols(byte src[], byte dst[], const int srcEnd, const int 
 
 			if (dstIdx + lenIdx >= dstEnd)
 				return -1;
-         
+
 			dstIdx += emitWordIndex(&dst[dstIdx], idx);
 			break;
 		}
@@ -1243,7 +1243,7 @@ bool TextCodec1::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int 
 			}
 
 			if (length > 1) {
-				memcpy(&dst[dstIdx+1], &buf[1], length-1);
+				memcpy(&dst[dstIdx + 1], &buf[1], length - 1);
 
 				// Regular word entry
 				wordRun = true;
@@ -1293,7 +1293,7 @@ TextCodec2::TextCodec2(Context& ctx)
 
 	if (ctx.has("blockSize")) {
 		blockSize = ctx.getInt("blockSize");
-		
+
 		if (blockSize >= 8)
 			log = max(min(Global::log2(blockSize / 8), 26), 13);
 
@@ -1321,7 +1321,7 @@ TextCodec2::TextCodec2(Context& ctx)
 void TextCodec2::reset() {
 	const int mapSize = 1 << _logHashSize;
 
-	if (_dictMap == nullptr) 
+	if (_dictMap == nullptr)
 		_dictMap = new DictEntry * [mapSize];
 
 	for (int i = 0; i < mapSize; i++)
@@ -1352,7 +1352,7 @@ bool TextCodec2::forward(SliceArray<byte>& input, SliceArray<byte>& output, int 
 	int srcIdx = 0;
 	int dstIdx = 0;
 
-	int32 freqs[256]= { 0 };
+	int32 freqs[256] = { 0 };
 	byte mode = TextCodec::computeStats(&src[srcIdx], count, freqs);
 
 	// Not text ?
@@ -1484,9 +1484,9 @@ bool TextCodec2::forward(SliceArray<byte>& input, SliceArray<byte>& output, int 
 		// Emit last symbols
 		const int dIdx = emitSymbols(&src[emitAnchor], &dst[dstIdx], srcEnd - emitAnchor, dstEnd - dstIdx);
 
-		if (dIdx < 0) 
+		if (dIdx < 0)
 			res = false;
-		else 
+		else
 			dstIdx += dIdx;
 
 		res &= (srcIdx == srcEnd);
@@ -1525,70 +1525,70 @@ int TextCodec2::emitSymbols(byte src[], byte dst[], const int srcEnd, const int 
 {
 	int dstIdx = 0;
 
-   if (2 * srcEnd < dstEnd) {
-      for (int i = 0; i < srcEnd; i++) {
-		   const byte cur = src[i];
+	if (2 * srcEnd < dstEnd) {
+		for (int i = 0; i < srcEnd; i++) {
+			const byte cur = src[i];
 
-		   switch (cur)
-		   {
-		   case TextCodec::ESCAPE_TOKEN1:
-			   dst[dstIdx++] = TextCodec::ESCAPE_TOKEN1;
-			   dst[dstIdx++] = TextCodec::ESCAPE_TOKEN1;
-			   break;
+			switch (cur)
+			{
+			case TextCodec::ESCAPE_TOKEN1:
+				dst[dstIdx++] = TextCodec::ESCAPE_TOKEN1;
+				dst[dstIdx++] = TextCodec::ESCAPE_TOKEN1;
+				break;
 
-		   case TextCodec::CR:
-			   if (_isCRLF == false)
-				   dst[dstIdx++] = cur;
+			case TextCodec::CR:
+				if (_isCRLF == false)
+					dst[dstIdx++] = cur;
 
-			   break;
+				break;
 
-		   default:
-			   if ((cur & TextCodec::MASK_80) != byte(0))
-				   dst[dstIdx++] = TextCodec::ESCAPE_TOKEN1;
+			default:
+				if ((cur & TextCodec::MASK_80) != byte(0))
+					dst[dstIdx++] = TextCodec::ESCAPE_TOKEN1;
 
-			   dst[dstIdx++] = cur;
-		   }
-	   }
-   }
-   else {
-	   for (int i = 0; i < srcEnd; i++) {
-		   const byte cur = src[i];
+				dst[dstIdx++] = cur;
+			}
+		}
+	}
+	else {
+		for (int i = 0; i < srcEnd; i++) {
+			const byte cur = src[i];
 
-		   switch (cur)
-		   {
-		   case TextCodec::ESCAPE_TOKEN1:
-			   if (dstIdx >= dstEnd - 1)
-			      return -1;
+			switch (cur)
+			{
+			case TextCodec::ESCAPE_TOKEN1:
+				if (dstIdx >= dstEnd - 1)
+					return -1;
 
-			   dst[dstIdx++] = TextCodec::ESCAPE_TOKEN1;
-			   dst[dstIdx++] = TextCodec::ESCAPE_TOKEN1;
-			   break;
+				dst[dstIdx++] = TextCodec::ESCAPE_TOKEN1;
+				dst[dstIdx++] = TextCodec::ESCAPE_TOKEN1;
+				break;
 
-		   case TextCodec::CR:
-            if (_isCRLF == false) {
-				   if (dstIdx >= dstEnd)
-				      return -1;
+			case TextCodec::CR:
+				if (_isCRLF == false) {
+					if (dstIdx >= dstEnd)
+						return -1;
 
-				   dst[dstIdx++] = cur;
-            }
+					dst[dstIdx++] = cur;
+				}
 
-			   break;
+				break;
 
-		   default:
-            if ((cur & TextCodec::MASK_80) != byte(0)) {
-				   if (dstIdx >= dstEnd)
-				      return -1;
+			default:
+				if ((cur & TextCodec::MASK_80) != byte(0)) {
+					if (dstIdx >= dstEnd)
+						return -1;
 
-				   dst[dstIdx++] = TextCodec::ESCAPE_TOKEN1;
-            }
+					dst[dstIdx++] = TextCodec::ESCAPE_TOKEN1;
+				}
 
-            if (dstIdx >= dstEnd)
-				   return -1;
+				if (dstIdx >= dstEnd)
+					return -1;
 
-			   dst[dstIdx++] = cur;
-		   }
-	   }
-   }
+				dst[dstIdx++] = cur;
+			}
+		}
+	}
 
 	return dstIdx;
 }
@@ -1705,7 +1705,7 @@ bool TextCodec2::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int 
 					idx2 = int(src[srcIdx++]);
 				}
 
- 				idx = (idx << 7) | (idx2 & 0x7F);
+				idx = (idx << 7) | (idx2 & 0x7F);
 
 				if (idx >= _dictSize)
 					break;
@@ -1733,7 +1733,7 @@ bool TextCodec2::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int 
 			}
 
 			if (length > 1) {
-				memcpy(&dst[dstIdx+1], &buf[1], length-1);
+				memcpy(&dst[dstIdx + 1], &buf[1], length - 1);
 
 				// Regular word entry
 				wordRun = true;
