@@ -72,11 +72,11 @@ const int Global::LOG2_4096[] = {
 
 //  65536/(1 + exp(-alpha*x))
 const int Global::INV_EXP[] = {
-    // alpha = 0.55
-        0,    17,    30,    51,    89,   154,   267,   461,
-      795,  1366,  2331,  3939,  6538, 10560, 16369, 23981,
-    32773, 41565, 49177, 54986, 59008, 61607, 63215, 64180,
-    64751, 65085, 65279, 65392, 65457, 65495, 65516, 65529,
+    // alpha = 0.54
+        0,     8,    22,    47,    88,   160,   283,   492,
+      848,  1451,  2459,  4117,  6766, 10819, 16608, 24127,
+    32768, 41409, 48928, 54717, 58770, 61419, 63077, 64085,
+    64688, 65044, 65253, 65376, 65448, 65489, 65514, 65528,
     65536
 };
 
@@ -89,7 +89,7 @@ const int* Global::initSquash()
     for (int x = -2047; x <= 2047; x++) {
        int w = x & 127;
        int y = (x >> 7) + 16;
-       res[x+2047] = (INV_EXP[y] * (128 - w) + INV_EXP[y + 1] * w) >> 11;
+       res[x + 2047] = (INV_EXP[y] * (128 - w) + INV_EXP[y + 1] * w) >> 11;
     }
 
     return res;
@@ -122,14 +122,14 @@ int Global::log2_1024(uint32 x) THROW
         throw invalid_argument("Cannot calculate log of a negative or null value");
 
     if (x < 256)
-        return (Global::LOG2_4096[x]+2) >> 2;
+        return (Global::LOG2_4096[x] + 2) >> 2;
 
     const int log = _log2(x);
 
     if ((x & (x - 1)) == 0)
         return log << 10;
     
-    return ((log-7)*1024) + ((LOG2_4096[x>>(log-7)]+2) >> 2);
+    return ((log - 7) * 1024) + ((LOG2_4096[x >> (log - 7)] + 2) >> 2);
 }
 
 
@@ -151,7 +151,7 @@ void Global::computeHistogram(byte block[], int length, uint freqs[], bool isOrd
         const uint8* end4 = (uint8*)&block[length & -4];
 
         if (withTotal == true)
-           freqs[256] = length;
+            freqs[256] = length;
 
         uint f0[256] = { 0 };
         uint f1[256] = { 0 };
@@ -180,19 +180,19 @@ void Global::computeHistogram(byte block[], int length, uint freqs[], bool isOrd
         uint8* p = (uint8*)&block[0];
 
         if (withTotal == true) {
-           for (int i = 0; i < length; i++) {
-               freqs[prv + uint(p[i])]++;
-               freqs[prv + 256]++;
-               prv = 257 * uint(p[i]);
-           }
-        } else {
-           for (int i = 0; i < length; i++) {
-               freqs[prv + uint(p[i])]++;
-               prv = 256 * uint(p[i]);
-           }
+            for (int i = 0; i < length; i++) {
+                freqs[prv + uint(p[i])]++;
+                freqs[prv + 256]++;
+                prv = 257 * uint(p[i]);
+            }
+        }
+        else {
+            for (int i = 0; i < length; i++) {
+                freqs[prv + uint(p[i])]++;
+                prv = 256 * uint(p[i]);
+            }
         }
     }
-
 }
 
 void Global::computeJobsPerTask(int jobsPerTask[], int jobs, int tasks) THROW
