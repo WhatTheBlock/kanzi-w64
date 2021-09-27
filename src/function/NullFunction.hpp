@@ -16,6 +16,7 @@ limitations under the License.
 #ifndef _NullFunction_
 #define _NullFunction_
 
+#include "../Context.hpp"
 #include "../Function.hpp"
 
 using namespace std;
@@ -28,6 +29,7 @@ namespace kanzi
    public:
        NullFunction() {}
 
+       NullFunction(Context&) {}
        ~NullFunction() {}
 
        bool forward(SliceArray<T>& input, SliceArray<T>& output, int length) THROW { return doCopy(input, output, length); }

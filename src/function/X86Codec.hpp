@@ -16,6 +16,7 @@ limitations under the License.
 #ifndef _X86Codec_
 #define _X86Codec_
 
+#include "../Context.hpp"
 #include "../Function.hpp"
 
 namespace kanzi 
@@ -25,6 +26,7 @@ namespace kanzi
    public:
        X86Codec() {}
 
+       X86Codec(Context&) {}
        ~X86Codec() {}
 
        bool forward(SliceArray<byte>& source, SliceArray<byte>& destination, int length) THROW;

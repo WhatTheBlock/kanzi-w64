@@ -16,6 +16,7 @@ limitations under the License.
 #ifndef _RLT_
 #define _RLT_
 
+#include "../Context.hpp"
 #include "../Function.hpp"
 
 namespace kanzi 
@@ -33,6 +34,7 @@ namespace kanzi
    public:
        RLT() {}
 
+       RLT(Context&) {}
        ~RLT() {}
 
        bool forward(SliceArray<byte>& pSrc, SliceArray<byte>& pDst, int length) THROW;
