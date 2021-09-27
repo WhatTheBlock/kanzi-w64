@@ -157,7 +157,7 @@ int ANSRangeEncoder::encode(byte block[], uint blkptr, uint len)
     }
 
     while (startChunk < end) {
-        const int sizeChunk = (startChunk + sz < end) ? sz : end - startChunk;
+        const int sizeChunk = min(sz, end - startChunk);
         int lr = _logRange;
 
         // Lower log range if the size of the data chunk is small
