@@ -16,7 +16,7 @@ kanzi為無損的檔案壓縮工具，保有高壓縮率的同時也大幅降低
 測試數據
 -------
 #### 測試平台：
-i7-6700HQ @2.60GHz, 20GB RAM, Windows 10 Pro 1903 (x64)
+i7-6700HQ @2.60GHz, 16GB RAM, Windows 10 Pro 21H1 (x64)
 
 #### 測試的壓縮工具：
 1. WinRAR v5.71.0
@@ -24,7 +24,7 @@ i7-6700HQ @2.60GHz, 20GB RAM, Windows 10 Pro 1903 (x64)
 3. UHARC v0.6a
 4. 7-Zip v19.00
 5. BCM v1.30
-6. Kanzi v1.6 build 20190903c
+6. Kanzi v1.7 build 20210928c
 7. Paq8px v178
 8. Paq8pxd v63
 9. cmix v18 <br><br>
@@ -39,7 +39,7 @@ i7-6700HQ @2.60GHz, 20GB RAM, Windows 10 Pro 1903 (x64)
 |uharc -mx -md32768             |94 	         |74.2            |23,911,123    |66.0%           |
 |7z -m0=ppmd:o32:mem1024m -mx9  |41.06           |42.78           |21,918,001    |60.5%           |
 |bcm -b100m                     |23.88           |31.45           |20,789,664    |57.4%           |
-|**kanzi -l 8 -b 100m**         |**50.57**       |**52.11**       |**19,142,982**|52.8%           |
+|**kanzi -l 8 -b 100m**         |**52.07**       |**51.73**       |**19,141,858**|52.8%           |
 |paq8px -9eta                   |20462.48        |21376.88        |16,457,780    |45.4%           |
 |paq8pxd -s15                   |?	         |?               |15,967,201    |44.1%           |
 |cmix                           |?               |?               |14,838,332    |40.9%           |
@@ -54,7 +54,7 @@ i7-6700HQ @2.60GHz, 20GB RAM, Windows 10 Pro 1903 (x64)
 |7z -m0=ppmd:o32:mem1024m -mx9  |50.42           |54.49           |47,850,118    |71.0%           |
 |bcm -b100m                     |-               |-               |46,506,680    |69.0%           |
 |uharc -mx -md32768             |124.2	         |109.2           |45,172,307    |67.0%           |
-|**kanzi -l 8 -b 100m -j 6**    |**56.19**       |**56.49**       |**40,477,451**|60.0%           |
+|**kanzi -l 8 -b 100m -j 6**    |**63.25**       |**64.81**       |**40,473,911**|60.0%           |
 |cmix                           |?               |?               |28,437,634    |42.2%           |
 
 <br>
@@ -105,7 +105,7 @@ i7-6700HQ @2.60GHz, 20GB RAM, Windows 10 Pro 1903 (x64)
         Providing this option forces entropy and transform.
         0=None&None (store), 1=TEXT+LZ&HUFFMAN, 2=TEXT+ROLZ
         3=TEXT+ROLZX, 4=TEXT+BWT+RANK+ZRLT&ANS0, 5=TEXT+BWT+SRT+ZRLT&FPAQ
-        6=BWT&CM, 7=X86+RLT+TEXT&TPAQ, 8=X86+RLT+TEXT&TPAQX
+        6=LZP+TEXT+BWT&CM, 7=X86+RLT+TEXT&TPAQ, 8=X86+RLT+TEXT&TPAQX
 
 
    -e, --entropy=<codec>
@@ -114,8 +114,8 @@ i7-6700HQ @2.60GHz, 20GB RAM, Windows 10 Pro 1903 (x64)
 
 
    -t, --transform=<codec>
-        transform [None|BWT|BWTS|LZ|ROLZ|ROLZX|RLT|ZRLT|MTFT]
-                  [RANK|SRT|TEXT|X86]
+        transform [None|BWT|BWTS|LZ|LZP|ROLZ|ROLZX|RLT|ZRLT]
+                  [MTFT|RANK|SRT|TEXT|X86]
         EX: BWT+RANK or BWTS+MTFT (default is BWT+RANK+ZRLT)
 
 
