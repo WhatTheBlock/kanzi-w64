@@ -35,7 +35,7 @@ limitations under the License.
 	#endif
 
    #ifdef _MSC_VER
-	  #if _MSC_VER >= 1920 && _MSC_VER <= 1921 
+	  #if _MSC_VER >= 1920 && _MSC_VER <= 1929 
 		 #define _MSC_VER_STR 2019
 	  #endif
    #endif
