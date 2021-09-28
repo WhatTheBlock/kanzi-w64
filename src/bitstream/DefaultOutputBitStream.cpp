@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2020 Frederic Langlet
+Copyright 2011-2017 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -18,7 +18,6 @@ limitations under the License.
 #include <fstream>
 
 using namespace kanzi;
-
 
 DefaultOutputBitStream::DefaultOutputBitStream(OutputStream& os, uint bufferSize) THROW : _os(os)
 {
@@ -84,7 +83,7 @@ uint DefaultOutputBitStream::writeBits(const byte bits[], uint count) THROW
             const uint64 value = uint64(BigEndian::readLong64(&bits[start]));
             _current |= (value >> r);
             pushCurrent();
-            _current = (value << (64-r));
+            _current = (value << (64 - r));
             _availBits -= r;
             start += 8;
             remaining -= 64;
@@ -151,7 +150,6 @@ void DefaultOutputBitStream::close() THROW
     _written -= 64; // adjust for method written()
 }
 
-
 // Write buffer to underlying stream
 void DefaultOutputBitStream::flush() THROW
 {
@@ -176,11 +174,12 @@ void DefaultOutputBitStream::flush() THROW
 
 DefaultOutputBitStream::~DefaultOutputBitStream()
 {
-	try {
-		close();
-	}
-	catch (exception&) {
-		// Ignore and continue
-	}
+    try {
+        close();
+    }
+    catch (exception&) {
+        // Ignore and continue
+    }
+
     delete[] _buffer;
 }

@@ -67,8 +67,7 @@ namespace kanzi
    // Write least significant bit of the input integer. Trigger exception if stream is closed
    inline void DefaultOutputBitStream::writeBit(int bit) THROW
    {
-       if (_availBits <= 1) // _availBits = 0 if stream is closed => force pushCurrent()
-       {
+       if (_availBits <= 1) { // _availBits = 0 if stream is closed => force pushCurrent()
            _current |= (bit & 1);
            pushCurrent();
        }
@@ -87,13 +86,12 @@ namespace kanzi
        if (int(count) < _availBits) {
            // Enough spots available in 'current'
            _availBits -= int(count);
-           _current |= ((value & (uint64(-1) >> (64 - count))) << _availBits);
+           _current |= ((value & ((uint64(1) << count) - 1)) << _availBits);
        }
        else {
            // Not enough spots available in 'current'
-           value &= (uint64(-1) >> (64 - count));
            const uint remaining = count - _availBits;
-           _current |= (value >> remaining);
+           _current |= ((value & ((uint64(1) << count) - 1)) >> remaining);
            pushCurrent();
 
            if (remaining != 0) {
