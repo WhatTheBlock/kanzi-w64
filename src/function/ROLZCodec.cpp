@@ -319,8 +319,8 @@ bool ROLZCodec1::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int 
     ios.rdbuf()->sputn(reinterpret_cast<char*>(&src[4]), count - 4);
     ios.rdbuf()->pubseekpos(0);
     SliceArray<byte> litBuf(new byte[getMaxEncodedLength(sizeChunk)], getMaxEncodedLength(sizeChunk));
-    SliceArray<byte> lenBuf(new byte[sizeChunk/2], sizeChunk/2);
-    SliceArray<byte> mIdxBuf(new byte[sizeChunk/2], sizeChunk/2);
+    SliceArray<byte> lenBuf(new byte[sizeChunk / 4], sizeChunk / 4);
+    SliceArray<byte> mIdxBuf(new byte[sizeChunk / 4], sizeChunk / 4);
     memset(&_counters[0], 0, sizeof(int32) * 65536);
     bool success = true;
 
