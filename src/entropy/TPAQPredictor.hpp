@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2019 Frederic Langlet
+Copyright 2011-2017 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -287,7 +287,7 @@ namespace kanzi
 
            // Block size requested by the user
            // The user can request a big block size to force more states
-		   const int rbsz = ctx->getInt("blockSize");
+           const int rbsz = ctx->getInt("blockSize");
 
            if (rbsz >= 64 * 1024 * 1024)
                statesSize = 1 << 29;
@@ -299,11 +299,11 @@ namespace kanzi
            // Actual size of the current block
            // Too many mixers hurts compression for small blocks.
            // Too few mixers hurts compression for big blocks.
-		   const int absz = ctx->getInt("size");
+           const int absz = ctx->getInt("size");
 
-		   if (absz >= 32 * 1024 * 1024)
-			   mixersSize = 1 << 17;
-		   else if (absz >= 16 * 1024 * 1024)
+           if (absz >= 32 * 1024 * 1024)
+               mixersSize = 1 << 17;
+           else if (absz >= 16 * 1024 * 1024)
                mixersSize = 1 << 16;
            else if (absz >= 8 * 1024 * 1024)
                mixersSize = 1 << 14;
@@ -395,17 +395,17 @@ namespace kanzi
                _ctx4 = createContext(_ctx1, _c4 ^ (_c8 & 0xFFFF));
                _ctx5 = (_c8 & MASK_F0F0F000) | ((_c4 & MASK_F0F0F000) >> 4);
 
-			   if (T == true) {
-				   const int h1 = ((_c4 & MASK_80808080) == 0) ? _c4 & MASK_4F4FFFFF : _c4 & MASK_80808080;
-				   const int h2 = ((_c8 & MASK_80808080) == 0) ? _c8 & MASK_4F4FFFFF : _c8 & MASK_80808080;
-				   _ctx6 = hash(h1 << 2, h2 >> 2);
-			   }
+               if (T == true) {
+                  const int h1 = ((_c4 & MASK_80808080) == 0) ? _c4 & MASK_4F4FFFFF : _c4 & MASK_80808080;
+                  const int h2 = ((_c8 & MASK_80808080) == 0) ? _c8 & MASK_4F4FFFFF : _c8 & MASK_80808080;
+                  _ctx6 = hash(h1 << 2, h2 >> 2);
+               }
            }
            else {
                // Mostly binary
-			   if (T == true) {
-				   _ctx6 = hash(_c4 & 0xFFFF0000, _c8 >> 16);
-			   }
+               if (T == true) {
+                  _ctx6 = hash(_c4 & 0xFFFF0000, _c8 >> 16);
+               }
 
                _ctx4 = createContext(HASH, _c4 ^ (_c4 & 0x000FFFFF));
                _ctx5 = _ctx0 | (_c8 << 16);
@@ -420,7 +420,7 @@ namespace kanzi
        // Get initial predictions
        // It has been observed that accessing memory via [ctx ^ c] is significantly faster
        // on SandyBridge/Windows and slower on SkyLake/Linux except when [ctx & 255 == 0]
-       // (with c < 256). Hence, use XOR for _ctx5 which is the only context that fullfills
+       // (with c < 256). Hence, use XOR for _ctx5 which is the only context that fulfills
        // the condition.
        prefetchRead(&_bigStatesMap[(_ctx2 + _c0) & _statesMask]);
        prefetchRead(&_bigStatesMap[(_ctx3 + _c0) & _statesMask]);
