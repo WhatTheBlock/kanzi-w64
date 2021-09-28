@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2020 Frederic Langlet
+Copyright 2011-2017 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -76,7 +76,7 @@ namespace kanzi {
        void dispose();
 
    private:
-	   Context _ctx;
+       Context _ctx;
        OutputStream* _os;
        CompressedInputStream* _cis;
        vector<Listener*> _listeners;
@@ -107,8 +107,6 @@ namespace kanzi {
        bool _overwrite;
        string _inputName;
        string _outputName;
-       string _codec;
-       string _transform;
        int _blockSize;
        int _jobs;
        vector<Listener*> _listeners;
