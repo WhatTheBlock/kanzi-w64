@@ -1,6 +1,6 @@
 
 /*
-Copyright 2011-2020 Frederic Langlet
+Copyright 2011-2017 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -72,8 +72,8 @@ BlockCompressor::BlockCompressor(map<string, string>& args) THROW
     it = args.find("outputName");
     _outputName = it->second;
     args.erase(it);
-    string strTransf;
     string strCodec;
+    string strTransf;
 
     it = args.find("entropy");
 
@@ -184,36 +184,34 @@ int BlockCompressor::compress(uint64& outputSize)
 {
     vector<FileData> files;
     Clock stopClock;
-
     int nbFiles = 1;
     Printer log(&cout);
     bool printFlag = _verbosity > 2;
     stringstream ss;
-	string str = _inputName;
+    string str = _inputName;
+    transform(str.begin(), str.end(), str.begin(), ::toupper);
+    bool isStdIn = str.compare(0, 5, "STDIN") == 0;
 
-	transform(str.begin(), str.end(), str.begin(), ::toupper);
-	bool isStdIn = str.compare(0, 5, "STDIN") == 0;
+    if (isStdIn == false) {
+       try {
+           createFileList(_inputName, files);
+       }
+       catch (IOException& e) {
+           cerr << e.what() << endl;
+           return Error::ERR_OPEN_FILE;
+       }
 
-	if (isStdIn == false) {
-		try {
-			createFileList(_inputName, files);
-		}
-		catch (IOException& e) {
-			cerr << e.what() << endl;
-			return Error::ERR_OPEN_FILE;
-		}
+       if (files.size() == 0) {
+           cerr << "Cannot access input file '" << _inputName << "'" << endl;
+           return Error::ERR_OPEN_FILE;
+       }
 
-		if (files.size() == 0) {
-			cerr << "Cannot access input file '" << _inputName << "'" << endl;
-			return Error::ERR_OPEN_FILE;
-		}
-
-		nbFiles = int(files.size());
-		string strFiles = (nbFiles > 1) ? " files" : " file";
-		ss << nbFiles << strFiles << " to compress\n";
-		log.println(ss.str().c_str(), _verbosity > 0);
-		ss.str(string());
-	}
+       nbFiles = int(files.size());
+       string strFiles = (nbFiles > 1) ? " files" : " file";
+       ss << nbFiles << strFiles << " to compress\n";
+       log.println(ss.str().c_str(), _verbosity > 0);
+       ss.str(string());
+    }
 
     ss << "Block size set to " << _blockSize << " bytes";
     log.println(ss.str().c_str(), printFlag);
@@ -274,57 +272,57 @@ int BlockCompressor::compress(uint64& outputSize)
     string upperOutputName = _outputName;
     transform(upperOutputName.begin(), upperOutputName.end(), upperOutputName.begin(), ::toupper);
     bool specialOutput = (upperOutputName.compare(0, 4, "NONE") == 0) || (upperOutputName.compare(0, 6, "STDOUT") == 0);
-    
-	if (isStdIn == false) {
-		struct stat buffer;
 
-		// Need to strip path separator at the end to make 'stat()' happy
-		if ((formattedInName.size() != 0) && (formattedInName[formattedInName.size() - 1] == PATH_SEPARATOR)) {
-			formattedInName = formattedInName.substr(0, formattedInName.size() - 1);
-		}
+    if (isStdIn == false) {
+       struct stat buffer;
 
-		if ((formattedOutName.size() != 0) && (formattedOutName[formattedOutName.size() - 1] == PATH_SEPARATOR)) {
-			formattedOutName = formattedOutName.substr(0, formattedOutName.size() - 1);
-		}
+       // Need to strip path separator at the end to make 'stat()' happy
+       if ((formattedInName.size() != 0) && (formattedInName[formattedInName.size() - 1] == PATH_SEPARATOR)) {
+           formattedInName = formattedInName.substr(0, formattedInName.size() - 1);
+       }
 
-		if (stat(formattedInName.c_str(), &buffer) != 0) {
-			cerr << "Cannot access input file '" << formattedInName << "'" << endl;
-			return Error::ERR_OPEN_FILE;
-		}
+       if ((formattedOutName.size() != 0) && (formattedOutName[formattedOutName.size() - 1] == PATH_SEPARATOR)) {
+           formattedOutName = formattedOutName.substr(0, formattedOutName.size() - 1);
+       }
 
-		if ((buffer.st_mode & S_IFDIR) != 0) {
-			inputIsDir = true;
+       if (stat(formattedInName.c_str(), &buffer) != 0) {
+           cerr << "Cannot access input file '" << formattedInName << "'" << endl;
+           return Error::ERR_OPEN_FILE;
+       }
 
-			if (formattedInName[formattedInName.size() - 1] == '.') {
-				formattedInName = formattedInName.substr(0, formattedInName.size() - 1);
-			}
+       if ((buffer.st_mode & S_IFDIR) != 0) {
+           inputIsDir = true;
 
-			if ((formattedInName.size() != 0) && (formattedInName[formattedInName.size() - 1] != PATH_SEPARATOR)) {
-				formattedInName += PATH_SEPARATOR;
-			}
+           if (formattedInName[formattedInName.size() - 1] == '.') {
+               formattedInName = formattedInName.substr(0, formattedInName.size() - 1);
+           }
 
-			if ((formattedOutName.size() != 0) && (specialOutput == false)) {
-				if (stat(formattedOutName.c_str(), &buffer) != 0) {
-					cerr << "Output must be an existing directory (or 'NONE')" << endl;
-					return Error::ERR_OPEN_FILE;
-				}
+           if ((formattedInName.size() != 0) && (formattedInName[formattedInName.size() - 1] != PATH_SEPARATOR)) {
+               formattedInName += PATH_SEPARATOR;
+           }
 
-				if ((buffer.st_mode & S_IFDIR) == 0) {
-					cerr << "Output must be a directory (or 'NONE')" << endl;
-					return Error::ERR_CREATE_FILE;
-				}
+           if ((formattedOutName.size() != 0) && (specialOutput == false)) {
+               if (stat(formattedOutName.c_str(), &buffer) != 0) {
+                   cerr << "Output must be an existing directory (or 'NONE')" << endl;
+                   return Error::ERR_OPEN_FILE;
+               }
 
-				formattedOutName += PATH_SEPARATOR;
-			}
-		}
-		else {
-			if ((formattedOutName.size() != 0) && (specialOutput == false)) {
-				if ((stat(formattedOutName.c_str(), &buffer) != 0) && ((buffer.st_mode & S_IFDIR) != 0)) {
-					cerr << "Output must be a file (or 'NONE')" << endl;
-					return Error::ERR_CREATE_FILE;
-				}
-			}
-		}
+               if ((buffer.st_mode & S_IFDIR) == 0) {
+                   cerr << "Output must be a directory (or 'NONE')" << endl;
+                   return Error::ERR_CREATE_FILE;
+               }
+
+               formattedOutName += PATH_SEPARATOR;
+           }
+       }
+       else {
+           if ((formattedOutName.size() != 0) && (specialOutput == false)) {
+               if ((stat(formattedOutName.c_str(), &buffer) != 0) && ((buffer.st_mode & S_IFDIR) != 0)) {
+                   cerr << "Output must be a file (or 'NONE')" << endl;
+                   return Error::ERR_CREATE_FILE;
+               }
+           }
+       }
     }
 
     map<string, string> ctx;
@@ -344,20 +342,20 @@ int BlockCompressor::compress(uint64& outputSize)
     // Run the task(s)
     if (nbFiles == 1) {
         string oName = formattedOutName;
-		string iName = "STDIN";
+        string iName = "STDIN";
+        
+        if (isStdIn == false) {
+           iName = files[0]._fullPath;
+           ss.str(string());
+           ss << files[0]._size;
+           ctx["fileSize"] = ss.str();
 
-		if (isStdIn == false) {
-			iName = files[0]._fullPath;
-			ss.str(string());
-			ss << files[0]._size;
-			ctx["fileSize"] = ss.str();
-
-			if (oName.length() == 0) {
-				oName = iName + ".knz";
-			}
-			else if ((inputIsDir == true) && (specialOutput == false)) {
-				oName = formattedOutName + iName.substr(formattedInName.size()) + ".knz";
-			}
+           if (oName.length() == 0) {
+               oName = iName + ".knz";
+           }
+           else if ((inputIsDir == true) && (specialOutput == false)) {
+               oName = formattedOutName + iName.substr(formattedInName.size()) + ".knz";
+           }
         }
 
         ctx["inputName"] = iName;
@@ -365,8 +363,8 @@ int BlockCompressor::compress(uint64& outputSize)
         ss.str(string());
         ss << _jobs;
         ctx["jobs"] = ss.str();
-		Context context(ctx);
-		FileCompressTask<FileCompressResult> task(context, _listeners);
+        Context context(ctx);
+        FileCompressTask<FileCompressResult> task(context, _listeners);
         FileCompressResult fcr = task.run();
         res = fcr._code;
         read = fcr._read;
@@ -381,7 +379,7 @@ int BlockCompressor::compress(uint64& outputSize)
         int* jobsPerTask = new int[nbFiles];
         Global::computeJobsPerTask(jobsPerTask, _jobs, nbFiles);
         int n = 0;
-		sortFilesByPathAndSize(files, false);
+        sortFilesByPathAndSize(files, false);
 
         // Create one task per file
         for (int i = 0; i < nbFiles; i++) {
@@ -395,11 +393,11 @@ int BlockCompressor::compress(uint64& outputSize)
                 oName = formattedOutName + iName.substr(formattedInName.size()) + ".knz";
             }
 
-			Context taskCtx(ctx);
-			taskCtx.putLong("fileSize", files[i]._size);
-			taskCtx.putString("inputName", iName);
-			taskCtx.putString("outputName", oName);
-			taskCtx.putInt("jobs", jobsPerTask[n++]);
+            Context taskCtx(ctx);
+            taskCtx.putLong("fileSize", files[i]._size);
+            taskCtx.putString("inputName", iName);
+            taskCtx.putString("outputName", oName);
+            taskCtx.putInt("jobs", jobsPerTask[n++]);
             ss.str(string());
             FileCompressTask<FileCompressResult>* task = new FileCompressTask<FileCompressResult>(taskCtx, _listeners);
             tasks.push_back(task);
@@ -411,7 +409,7 @@ int BlockCompressor::compress(uint64& outputSize)
         if (doConcurrent) {
             vector<FileCompressWorker<FileCompressTask<FileCompressResult>*, FileCompressResult>*> workers;
             vector<future<FileCompressResult> > results;
-			BoundedConcurrentQueue<FileCompressTask<FileCompressResult>*> queue(nbFiles, &tasks[0]);
+            BoundedConcurrentQueue<FileCompressTask<FileCompressResult>*> queue(nbFiles, &tasks[0]);
 
             // Create one worker per job and run it. A worker calls several tasks sequentially.
             for (int i = 0; i < _jobs; i++) {
@@ -553,7 +551,7 @@ void BlockCompressor::getTransformAndCodec(int level, string tranformAndCodec[2]
         return;
 
     case 6:
-        tranformAndCodec[0] = "BWT";
+        tranformAndCodec[0] = "LZP+TEXT+BWT";
         tranformAndCodec[1] = "CM";
         return;
 
@@ -586,9 +584,9 @@ template <class T>
 T FileCompressTask<T>::run()
 {
     Printer log(&cout);
-	int verbosity = _ctx.getInt("verbosity");
-	string inputName = _ctx.getString("inputName");
-	string outputName = _ctx.getString("outputName");
+    int verbosity = _ctx.getInt("verbosity");
+    string inputName = _ctx.getString("inputName");
+    string outputName = _ctx.getString("outputName");
     bool printFlag = verbosity > 2;
     stringstream ss;
     ss << "Input file name set to '" << inputName << "'";
@@ -597,7 +595,7 @@ T FileCompressTask<T>::run()
     ss << "Output file name set to '" << outputName << "'";
     log.println(ss.str().c_str(), printFlag);
     ss.str(string());
-	string strOverwrite = _ctx.getString("overwrite");
+    string strOverwrite = _ctx.getString("overwrite");
     bool overwrite = strOverwrite == STR_TRUE;
 
     OutputStream* os = nullptr;
@@ -724,7 +722,7 @@ T FileCompressTask<T>::run()
     try {
         while (true) {
             try {
-                _is->read((char*)&sa._array[0], sa._length);
+                _is->read(reinterpret_cast<char*>(&sa._array[0]), sa._length);
                 len = (*_is) ? sa._length : int(_is->gcount());
             }
             catch (exception& e) {
@@ -739,7 +737,7 @@ T FileCompressTask<T>::run()
 
             // Just write block to the compressed output stream !
             read += len;
-            _cos->write((const char*)&sa._array[0], len);
+            _cos->write(reinterpret_cast<const char*>(&sa._array[0]), len);
         }
     }
     catch (IOException& ioe) {

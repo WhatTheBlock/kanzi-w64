@@ -244,8 +244,8 @@ int processCommandLine(int argc, const char* argv[], map<string, string>& map)
                 log.println("        (default is ANS0)\n", true);
 				log.println("", true);
                 log.println("   -t, --transform=<codec>", true);
-                log.println("        transform [None|BWT|BWTS|LZ|ROLZ|ROLZX|RLT|ZRLT|MTFT]", true);
-                log.println("                  [RANK|SRT|TEXT|X86]", true);
+                log.println("        transform [None|BWT|BWTS|LZ|LZP|ROLZ|ROLZX|RLT|ZRLT]", true);
+                log.println("                  [MTFT|RANK|SRT|TEXT|X86]", true);
                 log.println("        EX: BWT+RANK or BWTS+MTFT (default is BWT+RANK+ZRLT)\n", true);
 				log.println("", true);
                 log.println("   -x, --checksum", true);

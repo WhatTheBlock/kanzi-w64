@@ -29,7 +29,7 @@ namespace kanzi {
 	class FunctionFactory {
 	public:
 		// Up to 64 transforms can be declared (6 bit index)
-		static const uint64 NONE_TYPE = 0; // copy
+		static const uint64 NONE_TYPE = 0; // Copy
 		static const uint64 BWT_TYPE = 1; // Burrows Wheeler
 		static const uint64 BWTS_TYPE = 2; // Burrows Wheeler Scott
 		static const uint64 LZ_TYPE = 3; // Lempel Ziv
@@ -43,6 +43,7 @@ namespace kanzi {
 		static const uint64 ROLZ_TYPE = 11; // ROLZ codec
 		static const uint64 ROLZX_TYPE = 12; // ROLZ Extra codec
 		static const uint64 SRT_TYPE = 13; // Sorted Rank
+		static const uint64 LZP_TYPE = 14; // Lempel Ziv Predict
 
 		static uint64 getType(const char* name) THROW;
 
@@ -90,7 +91,7 @@ namespace kanzi {
 				ss << "Only 8 transforms allowed: " << name;
 				throw invalid_argument(ss.str());
 			}
-			
+
 			string token = name.substr(prv, pos - prv);
 			uint64 typeTk = getTypeToken(token.c_str());
 
@@ -146,6 +147,9 @@ namespace kanzi {
 		if (name == "LZ")
 			return LZ_TYPE;
 
+		if (name == "LZP")
+			return LZP_TYPE;
+
 		if (name == "X86")
 			return X86_TYPE;
 
@@ -181,14 +185,14 @@ namespace kanzi {
 		case DICT_TYPE: {
 			int textCodecType = 1;
          
-			if (ctx.has("codec")) {
+			if (ctx.has("codec")) {			
 				string entropyType = ctx.getString("codec");
 				transform(entropyType.begin(), entropyType.end(), entropyType.begin(), ::toupper);
             
 				// Select text encoding based on entropy codec.
 				if ((entropyType == "NONE") || (entropyType == "ANS0") ||
-					(entropyType == "HUFFMAN") || (entropyType == "RANGE"))
-					textCodecType = 2;
+				   (entropyType == "HUFFMAN") || (entropyType == "RANGE"))
+				    textCodecType = 2;
 			}
          
 			ctx.putInt("textcodec", textCodecType);
@@ -223,6 +227,11 @@ namespace kanzi {
 			return new RLT(ctx);
 
 		case LZ_TYPE:
+			ctx.putInt("lz", LZ_TYPE);
+			return new LZCodec(ctx);
+
+		case LZP_TYPE:
+			ctx.putInt("lz", LZP_TYPE);
 			return new LZCodec(ctx);
 
 		case X86_TYPE:
@@ -300,6 +309,9 @@ namespace kanzi {
 
 		case LZ_TYPE:
 			return "LZ";
+
+		case LZP_TYPE:
+			return "LZP";
 
 		case X86_TYPE:
 			return "X86";
