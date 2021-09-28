@@ -107,7 +107,3 @@ void BinaryEntropyDecoder::initialize()
     _current = _bitstream.readBits(56);
     _initialized = true;
 }
-
-void BinaryEntropyDecoder::dispose()
-{
-}

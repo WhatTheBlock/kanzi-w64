@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2019 Frederic Langlet
+Copyright 2011-2017 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -56,24 +56,20 @@ namespace kanzi
 
        virtual void encodeByte(byte val);
 
-       inline void encodeBit(int bit, int pred = 2048);
+       void encodeBit(int bit, int pred = 2048);
    };
 
 
    inline void BinaryEntropyEncoder::encodeBit(int bit, int pred)
    {
-       // Calculate interval split
-       // Written in a way to maximize accuracy of multiplication/division
-       const uint64 split = (((_high - _low) >> 4) * uint64(pred)) >> 8;
-
-       // Update fields with new interval bounds
-       if (bit == 0) 
-		   _low += (split + 1);
-       else 
-          _high = _low + split;
-
-       // Update predictor
-       _predictor->update(bit);
+       // Update fields with new interval bounds and predictor
+       if (bit == 0) {
+          _low = _low + ((((_high - _low) >> 4) * uint64(pred)) >> 8) + 1;
+          _predictor->update(0);
+       } else  {
+          _high = _low + ((((_high - _low) >> 4) * uint64(pred)) >> 8);
+          _predictor->update(1);
+       }
 
        // Write unchanged first 32 bits to bitstream
        while (((_low ^ _high) >> 24) == 0)
