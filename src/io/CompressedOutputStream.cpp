@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2020 Frederic Langlet
+Copyright 2011-2017 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -65,7 +65,7 @@ CompressedOutputStream::CompressedOutputStream(OutputStream& os, const string& e
 
     _blockId = 0;
     _blockSize = bSize;
-	_nbInputBlocks = 0;
+    _nbInputBlocks = 0;
     _initialized = false;
     _closed = false;
     _obs = new DefaultOutputBitStream(os, DEFAULT_BUFFER_SIZE);
@@ -85,7 +85,7 @@ CompressedOutputStream::CompressedOutputStream(OutputStream& os, Context& ctx)
     , _os(os)
     , _ctx(ctx)
 {
-	int tasks = ctx.getInt("jobs");
+    int tasks = ctx.getInt("jobs");
 
 #ifdef CONCURRENCY_ENABLED
     if ((tasks <= 0) || (tasks > MAX_CONCURRENCY)) {
@@ -98,9 +98,9 @@ CompressedOutputStream::CompressedOutputStream(OutputStream& os, Context& ctx)
         throw invalid_argument("The number of jobs is limited to 1 in this version");
 #endif
 
-	string entropyCodec = ctx.getString("codec");
-	string transform = ctx.getString("transform");
-	int bSize = ctx.getInt("blockSize");
+    string entropyCodec = ctx.getString("codec");
+    string transform = ctx.getString("transform");
+    int bSize = ctx.getInt("blockSize");
 
     if (bSize > MAX_BITSTREAM_BLOCK_SIZE) {
         std::stringstream ss;
@@ -130,16 +130,16 @@ CompressedOutputStream::CompressedOutputStream(OutputStream& os, Context& ctx)
     // This value is written to the bitstream header to let the decoder make
     // better decisions about memory usage and job allocation in concurrent
     // decompression scenario.
-	const int64 fileSize = ctx.getLong("fileSize", 0);
-	const int64 nbBlocks = (fileSize + int64(bSize - 1)) / int64(bSize);
-	_nbInputBlocks = (nbBlocks > 63) ? 63 : uint8(nbBlocks);
+    const int64 fileSize = ctx.getLong("fileSize", 0);
+    const int64 nbBlocks = (fileSize + int64(bSize - 1)) / int64(bSize);
+    _nbInputBlocks = (nbBlocks > 63) ? 63 : uint8(nbBlocks);
 
     _initialized = false;
     _closed = false;
     _obs = new DefaultOutputBitStream(os, DEFAULT_BUFFER_SIZE);
     _entropyType = EntropyCodecFactory::getType(entropyCodec.c_str());
     _transformType = FunctionFactory<byte>::getType(transform.c_str());
-	string str = ctx.getString("checksum");
+    string str = ctx.getString("checksum");
     bool checksum = str == STR_TRUE;
     _hasher = (checksum == true) ? new XXHash32(BITSTREAM_TYPE) : nullptr;
     _jobs = tasks;
@@ -325,7 +325,7 @@ ostream& CompressedOutputStream::seekp(streampos) THROW
 
 void CompressedOutputStream::processBlock(bool force) THROW
 {
-    if (force == false) {
+    if (force == false) { 
         const int bufSize = min(_jobs, max(int(_nbInputBlocks), 1)) * _blockSize;
 
         if (_sa->_length < bufSize) {
@@ -362,7 +362,7 @@ void CompressedOutputStream::processBlock(bool force) THROW
             if (sz == 0)
                 break;
 
-			Context copyCtx(_ctx);
+            Context copyCtx(_ctx);
             _buffers[2 * jobId]->_index = 0;
             _buffers[2 * jobId + 1]->_index = 0;
 
@@ -393,7 +393,7 @@ void CompressedOutputStream::processBlock(bool force) THROW
             if (res._error != 0)
                 throw IOException(res._msg, res._error); // deallocate in catch block
 
-			delete task;
+            delete task;
         }
 #ifdef CONCURRENCY_ENABLED
         else {
@@ -414,7 +414,7 @@ void CompressedOutputStream::processBlock(bool force) THROW
         }
 
         for (vector<EncodingTask<EncodingTaskResult>*>::iterator it = tasks.begin(); it != tasks.end(); it++)
-            delete* it;
+            delete *it;
 
         tasks.clear();
 #endif
@@ -462,7 +462,7 @@ EncodingTask<T>::EncodingTask(SliceArray<byte>* iBuffer, SliceArray<byte>* oBuff
     uint64 transformType, uint32 entropyType, int blockId,
     OutputBitStream* obs, XXHash32* hasher,
     atomic_int* processedBlockId, vector<Listener*>& listeners,
-	Context& ctx)
+    Context& ctx)
     : _ctx(ctx)
 {
     _data = iBuffer;
@@ -514,13 +514,14 @@ T EncodingTask<T>::run() THROW
             mode |= CompressedOutputStream::COPY_BLOCK_MASK;
         }
         else {
-			if (_ctx.has("skipBlocks")) {
-				string str = _ctx.getString("skipBlocks");
+            if (_ctx.has("skipBlocks")) {
+                string str = _ctx.getString("skipBlocks");
                 transform(str.begin(), str.end(), str.begin(), ::toupper);
 
                 if (str == STR_TRUE) {
                    uint histo[256];
                    const int entropy = EntropyUtils::computeFirstOrderEntropy1024(&_data->_array[_data->_index], _blockLength, histo);
+                   //_ctx.putString("histo0", toString(histo, 256));
 
                    if (entropy >= EntropyUtils::INCOMPRESSIBLE_THRESHOLD) {
                        _transformType = FunctionFactory<byte>::NONE_TYPE;
@@ -531,7 +532,7 @@ T EncodingTask<T>::run() THROW
             }
         }
 
-		_ctx.putInt("size", _blockLength);
+        _ctx.putInt("size", _blockLength);
         TransformSequence<byte>* transform = FunctionFactory<byte>::newFunction(_ctx, _transformType);
         int requiredSize = transform->getMaxEncodedLength(_blockLength);
 
@@ -554,7 +555,7 @@ T EncodingTask<T>::run() THROW
         if (postTransformLength < 0)
             return T(_blockId, Error::ERR_WRITE_FILE, "Invalid transform size");
 
-		_ctx.putInt("size", postTransformLength);
+        _ctx.putInt("size", postTransformLength);
         int dataSize = 0;
 
         for (uint64 n = 0xFF; n < uint64(postTransformLength); n <<= 8)
@@ -584,7 +585,7 @@ T EncodingTask<T>::run() THROW
         uint64 written = _obs->written();
 
         if (((mode & CompressedOutputStream::COPY_BLOCK_MASK) != byte(0)) || (nbFunctions <= 4)) {
-            mode |= byte(uint8(skipFlags) >> 4);
+            mode |= byte(skipFlags >> 4);
             _obs->writeBits(uint64(mode), 8);
         }
         else {

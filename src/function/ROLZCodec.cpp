@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2020 Frederic Langlet
+Copyright 2011-2017 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -33,9 +33,9 @@ ROLZCodec::ROLZCodec(uint logPosChecks) THROW
 
 ROLZCodec::ROLZCodec(Context& ctx) THROW
 {
-	string transform = ctx.getString("transform", "NONE");
+    string transform = ctx.getString("transform", "NONE");
 
-    _delegate = (transform.find("ROLZX") != string::npos) ? (Function<byte>*) new ROLZCodec2(LOG_POS_CHECKS2) : 
+    _delegate = (transform.find("ROLZX") != string::npos) ? (Function<byte>*) new ROLZCodec2(LOG_POS_CHECKS2) :
        (Function<byte>*) new ROLZCodec1(LOG_POS_CHECKS1);
 }
 
@@ -84,9 +84,9 @@ bool ROLZCodec::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int c
         stringstream ss;
         ss << "The max ROLZ codec block size is " << MAX_BLOCK_SIZE << ", got " << count;
         throw invalid_argument(ss.str());
-	}
+    }
 
-	return _delegate->inverse(input, output, count);
+    return _delegate->inverse(input, output, count);
 }
 
 ROLZCodec1::ROLZCodec1(uint logPosChecks) THROW
@@ -173,11 +173,10 @@ bool ROLZCodec1::forward(SliceArray<byte>& input, SliceArray<byte>& output, int 
     SliceArray<byte> mIdxBuf(new byte[sizeChunk / 4], sizeChunk / 4);
     memset(&_counters[0], 0, sizeof(int32) * 65536);
     bool success = true;
+    const int litOrder = (count < 1<<17) ? 0 : 1;
+    dst[dstIdx++] = (byte) litOrder;
 
-	const int litOrder = (count < 1 << 17) ? 0 : 1;
-	dst[dstIdx++] = (byte)litOrder;
-
-	// Main loop
+    // Main loop
     while (startChunk < srcEnd) {
         litBuf._index = 0;
         lenBuf._index = 0;
@@ -189,7 +188,7 @@ bool ROLZCodec1::forward(SliceArray<byte>& input, SliceArray<byte>& output, int 
         int srcIdx = 0;
         litBuf._array[litBuf._index++] = buf[srcIdx++];
 
-        if (startChunk+1 < srcEnd)
+        if (startChunk + 1 < srcEnd)
             litBuf._array[litBuf._index++] = buf[srcIdx++];
 
         int firstLitIdx = srcIdx;
@@ -230,15 +229,15 @@ bool ROLZCodec1::forward(SliceArray<byte>& input, SliceArray<byte>& output, int 
            // Encode literal, match length and match index buffers
            DefaultOutputBitStream obs(ios, 65536);
            obs.writeBits(litBuf._index, 32);
-		   obs.writeBits(lenBuf._index, 32);
-		   obs.writeBits(mIdxBuf._index, 32);
-		   ANSRangeEncoder litEnc(obs, litOrder);
+           obs.writeBits(lenBuf._index, 32);
+           obs.writeBits(mIdxBuf._index, 32);
+           ANSRangeEncoder litEnc(obs, litOrder);
            litEnc.encode(litBuf._array, 0, litBuf._index);
            litEnc.dispose();
-		   ANSRangeEncoder mEnc(obs, 0);
-		   mEnc.encode(lenBuf._array, 0, lenBuf._index);
-		   mEnc.encode(mIdxBuf._array, 0, mIdxBuf._index);
-		   mEnc.dispose();
+           ANSRangeEncoder mEnc(obs, 0);
+           mEnc.encode(lenBuf._array, 0, lenBuf._index);
+           mEnc.encode(mIdxBuf._array, 0, mIdxBuf._index);
+           mEnc.dispose();
            obs.close();
            ios.flush();
         }
@@ -258,7 +257,7 @@ bool ROLZCodec1::forward(SliceArray<byte>& input, SliceArray<byte>& output, int 
         startChunk = endChunk;
     }
 
-End: 
+End:
     if (success) {
         // Emit last literals
         dst[dstIdx++] = src[srcEnd];
@@ -279,7 +278,7 @@ void ROLZCodec1::emitToken(SliceArray<byte>& sba, int litLen, int mLen)
 {
    // mode LLLLLMMM -> L lit length, M match length
    const int mode = (litLen<31) ? (litLen<<3) : 0xF8;
-         
+
    if (mLen >= 7) {
         sba._array[sba._index++] = byte(mode|0x07);
         sba._array[sba._index++] = byte(mLen-7);
@@ -287,18 +286,19 @@ void ROLZCodec1::emitToken(SliceArray<byte>& sba, int litLen, int mLen)
    else {
         sba._array[sba._index++] = byte(mode|mLen);
    }
-  
+
    if (litLen >= 31) {
         litLen -= 31;
 
         if (litLen >= 1<<7) {
             if (litLen >= 1<<14) {
-               if (litLen >= 1<<21) sba._array[sba._index++] = byte(0x80 | (litLen >> 21));
+               if (litLen >= 1<<21)
+                  sba._array[sba._index++] = byte(0x80|(litLen>>21));
 
-			   sba._array[sba._index++] = byte(0x80 | (litLen >> 14));
+               sba._array[sba._index++] = byte(0x80|(litLen>>14));
             }
 
-			sba._array[sba._index++] = byte(0x80 | (litLen >> 7));
+            sba._array[sba._index++] = byte(0x80|(litLen>>7));
         }
 
         sba._array[sba._index++] = byte(litLen&0x7F);
@@ -323,10 +323,9 @@ bool ROLZCodec1::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int 
     SliceArray<byte> mIdxBuf(new byte[sizeChunk / 4], sizeChunk / 4);
     memset(&_counters[0], 0, sizeof(int32) * 65536);
     bool success = true;
+    const int litOrder = int(src[srcIdx++]);
 
-	const int litOrder = to_integer<int>(src[srcIdx++]);
-
-	// Main loop
+    // Main loop
     while (startChunk < dstEnd) {
         litBuf._index = 0;
         lenBuf._index = 0;
@@ -334,40 +333,40 @@ bool ROLZCodec1::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int 
         memset(&_matches[0], 0, sizeof(int32) * (ROLZCodec::HASH_SIZE << _logPosChecks));
         const int endChunk = min(startChunk + sizeChunk, dstEnd);
         sizeChunk = endChunk - startChunk;
-        
+
         // Scope to deallocate resources early
         {
             // Decode literal, length and match index buffers
             ios.rdbuf()->pubseekpos(srcIdx - 4);
             DefaultInputBitStream ibs(ios, 65536);
-			int litLen = int(ibs.readBits(32));
-			int mLenLen = int(ibs.readBits(32));
-			int mIdxLen = int(ibs.readBits(32));
+            int litLen = int(ibs.readBits(32));
+            int mLenLen = int(ibs.readBits(32));
+            int mIdxLen = int(ibs.readBits(32));
 
-			if ((litLen > sizeChunk) || (mLenLen > sizeChunk) || (mIdxLen > sizeChunk)) {
+            if ((litLen > sizeChunk) || (mLenLen > sizeChunk) || (mIdxLen > sizeChunk)) {
                input._index = srcIdx;
                output._index = startChunk;
-			   success = false;
-			   goto End;
+               success = false;
+               goto End;
             }
+       
+            ANSRangeDecoder litDec(ibs, litOrder);
+            litDec.decode(litBuf._array, 0, litLen);
+            litDec.dispose();
+            ANSRangeDecoder mDec(ibs, 0);
+            mDec.decode(lenBuf._array, 0, mLenLen);
+            mDec.decode(mIdxBuf._array, 0, mIdxLen);
+            mDec.dispose();
 
-			ANSRangeDecoder litDec(ibs, litOrder);
-			litDec.decode(litBuf._array, 0, litLen);
-			litDec.dispose();
-			ANSRangeDecoder mDec(ibs, 0);
-			mDec.decode(lenBuf._array, 0, mLenLen);
-			mDec.decode(mIdxBuf._array, 0, mIdxLen);
-			mDec.dispose();
-
-			srcIdx += int((ibs.read() + 7) >> 3);
-			ibs.close();
+            srcIdx += int((ibs.read() + 7) >> 3);
+            ibs.close();
         }
 
         byte* buf = &output._array[output._index];
         int dstIdx = 0;
         buf[dstIdx++] = litBuf._array[litBuf._index++];
 
-        if (output._index+1 < dstEnd)
+        if (output._index + 1 < dstEnd)
             buf[dstIdx++] = litBuf._array[litBuf._index++];
 
         // Next chunk
@@ -380,7 +379,8 @@ bool ROLZCodec1::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int 
 
             if (dstIdx >= sizeChunk) {
                   // Last chunk literals not followed by match
-                  if (dstIdx == sizeChunk) break;
+                  if (dstIdx == sizeChunk)
+                        break;
 
                   output._index += dstIdx;
                   success = false;
@@ -396,7 +396,7 @@ bool ROLZCodec1::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int 
 
             const uint32 key = ROLZCodec::getKey(&buf[dstIdx - 2]);
             prefetchRead(&_counters[key]);
-            const int matchIdx = int(mIdxBuf._array[mIdxBuf._index++]) & 0xFF;
+            const int matchIdx = int(mIdxBuf._array[mIdxBuf._index++]);
             int32* matches = &_matches[key << _logPosChecks];
             const int32 ref = matches[(_counters[key] - matchIdx) & _maskChecks];
             const int32 savedIdx = dstIdx;
@@ -429,11 +429,11 @@ End:
 void ROLZCodec1::readLengths(SliceArray<byte>& lenBuf, int& litLen, int& mLen)
 {
     // mode LLLLLMMM -> L lit length, M match length
-    const int mode = int(lenBuf._array[lenBuf._index++]) & 0xFF;
+    const int mode = int(lenBuf._array[lenBuf._index++]);
     mLen = mode & 0x07;
 
     if (mLen == 7)
-        mLen += (int(lenBuf._array[lenBuf._index++]) & 0xFF);
+        mLen += int(lenBuf._array[lenBuf._index++]);
 
     if (mode < 0xF8) {
         litLen = mode >> 3;
@@ -442,7 +442,7 @@ void ROLZCodec1::readLengths(SliceArray<byte>& lenBuf, int& litLen, int& mLen)
 
     int next = int(lenBuf._array[lenBuf._index++]);
     litLen = (next & 0x7F);
-    
+
     if ((next & 0x80) != 0) {
         next = int(lenBuf._array[lenBuf._index++]);
         litLen = (litLen << 7) | (next & 0x7F);
@@ -490,7 +490,7 @@ void ROLZPredictor::reset()
     _c1 = 1;
     _ctx = 0;
 
-    for (int i = 0; i < 256 * _size; i++) 
+    for (int i = 0; i < 256 * _size; i++)
         _probs[i] = 32768;
 }
 
@@ -637,7 +637,7 @@ bool ROLZCodec2::forward(SliceArray<byte>& input, SliceArray<byte>& output, int 
     int startChunk = 0;
     _litPredictor.reset();
     _matchPredictor.reset();
-    Predictor* predictors[2] = { &_litPredictor, &_matchPredictor };
+    Predictor* predictors[2] = { &_matchPredictor, &_litPredictor };
     ROLZEncoder re(predictors, &dst[0], dstIdx);
     memset(&_counters[0], 0, sizeof(int32) * 65536);
 
@@ -648,7 +648,7 @@ bool ROLZCodec2::forward(SliceArray<byte>& input, SliceArray<byte>& output, int 
         src = &input._array[startChunk];
         srcIdx = 0;
 
-		// First literals
+        // First literals
         _litPredictor.setContext(byte(0));
         re.setContext(LITERAL_FLAG);
         re.encodeBit(LITERAL_FLAG);
@@ -665,13 +665,13 @@ bool ROLZCodec2::forward(SliceArray<byte>& input, SliceArray<byte>& output, int 
             const int match = findMatch(src, srcIdx, sizeChunk);
 
             if (match == -1) {
-				// Emit one literal
+                // Emit one literal
                 re.encodeBit(LITERAL_FLAG);
                 re.encodeByte(src[srcIdx]);
                 srcIdx++;
             }
             else {
-				// Emit one match length and index
+                // Emit one match length and index
                 const int matchLen = match & 0xFFFF;
                 re.encodeBit(MATCH_FLAG);
                 re.encodeByte(byte(matchLen));
@@ -732,7 +732,7 @@ bool ROLZCodec2::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int 
         dst = &output._array[output._index];
         int dstIdx = 0;
 
-		// First literals
+        // First literals
         _litPredictor.setContext(byte(0));
         rd.setContext(LITERAL_FLAG);
         int bit = rd.decodeBit();
@@ -764,8 +764,8 @@ bool ROLZCodec2::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int 
             prefetchRead(&_counters[key]);
 
             if (rd.decodeBit() == MATCH_FLAG) {
-				// Read one match length and index
-                const int matchLen = int(rd.decodeByte()) & 0xFF;
+                // Read one match length and index
+                const int matchLen = int(rd.decodeByte());
 
                 // Sanity check
                 if (dstIdx + matchLen + 3 > dstEnd) {
@@ -784,7 +784,7 @@ bool ROLZCodec2::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int 
                 dstIdx = ROLZCodec::emitCopy(dst, dstIdx, ref, matchLen);
             }
             else {
-				// Read one literal
+                // Read one literal
                 dst[dstIdx++] = rd.decodeByte();
             }
 
@@ -802,7 +802,7 @@ bool ROLZCodec2::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int 
     return srcIdx == count;
 }
 
-int ROLZCodec2::getMaxEncodedLength(int srcLen) const 
+int ROLZCodec2::getMaxEncodedLength(int srcLen) const
 {
     // Since we do not check the dst index for each byte (for speed purpose)
     // allocate some extra buffer for incompressible data.

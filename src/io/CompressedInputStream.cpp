@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2020 Frederic Langlet
+Copyright 2011-2017 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -55,7 +55,7 @@ CompressedInputStream::CompressedInputStream(InputStream& is, int tasks)
     _jobs = tasks;
     _sa = new SliceArray<byte>(new byte[0], 0, 0);
     _hasher = nullptr;
-	_nbInputBlocks = 0;
+    _nbInputBlocks = 0;
     _buffers = new SliceArray<byte>*[2 * _jobs];
 
     for (int i = 0; i < 2 * _jobs; i++)
@@ -67,7 +67,7 @@ CompressedInputStream::CompressedInputStream(InputStream& is, Context& ctx)
     , _is(is)
     , _ctx(ctx)
 {
-	int tasks = ctx.getInt("jobs", 1);
+    int tasks = ctx.getInt("jobs", 1);
 
 #ifdef CONCURRENCY_ENABLED
     if ((tasks <= 0) || (tasks > MAX_CONCURRENCY)) {
@@ -92,7 +92,7 @@ CompressedInputStream::CompressedInputStream(InputStream& is, Context& ctx)
     _jobs = tasks;
     _sa = new SliceArray<byte>(new byte[0], 0, 0);
     _hasher = nullptr;
-	_nbInputBlocks = 0;
+    _nbInputBlocks = 0;
     _buffers = new SliceArray<byte>*[2 * _jobs];
 
     for (int i = 0; i < 2 * _jobs; i++)
@@ -151,16 +151,16 @@ void CompressedInputStream::readHeader() THROW
 
     // Read entropy codec
     _entropyType = uint32(_ibs->readBits(5));
-	_ctx.putString("codec", EntropyCodecFactory::getName(_entropyType));
+    _ctx.putString("codec", EntropyCodecFactory::getName(_entropyType));
     _ctx.putString("extra", _entropyType == EntropyCodecFactory::TPAQX_TYPE ? STR_TRUE : STR_FALSE);
 
     // Read transform: 8*6 bits
     _transformType = _ibs->readBits(48);
-	_ctx.putString("transform", FunctionFactory<byte>::getName(_transformType));
+    _ctx.putString("transform", FunctionFactory<byte>::getName(_transformType));
 
     // Read block size
     _blockSize = int(_ibs->readBits(28)) << 4;
-	_ctx.putInt("blockSize", _blockSize);
+    _ctx.putInt("blockSize", _blockSize);
 
     if ((_blockSize < MIN_BITSTREAM_BLOCK_SIZE) || (_blockSize > MAX_BITSTREAM_BLOCK_SIZE)) {
         stringstream ss;
@@ -249,7 +249,7 @@ int CompressedInputStream::peek() THROW
             }
         }
 
-        return int(_sa->_array[_sa->_index]) & 0xFF;
+        return int(_sa->_array[_sa->_index]);
     }
     catch (IOException& e) {
         setstate(ios::badbit);
@@ -351,7 +351,7 @@ int CompressedInputStream::processBlock() THROW
 
     try {
         // Add a padding area to manage any block with header or temporarily expanded
-		const int blkSize = max(_blockSize + EXTRA_BUFFER_SIZE, _blockSize + (_blockSize >> 4));
+        const int blkSize = max(_blockSize + EXTRA_BUFFER_SIZE, _blockSize + (_blockSize >> 4));
 
         // Protect against future concurrent modification of the list of block listeners
         vector<Listener*> blockListeners(_listeners);
@@ -395,8 +395,8 @@ int CompressedInputStream::processBlock() THROW
                 _buffers[2 * jobId]->_length = blkSize;
             }
 
-			Context copyCtx(_ctx);
-			copyCtx.putInt("jobs", jobsPerTask[jobId]);
+            Context copyCtx(_ctx);
+            copyCtx.putInt("jobs", jobsPerTask[jobId]);
 
             DecodingTask<DecodingTaskResult>* task = new DecodingTask<DecodingTaskResult>(_buffers[2 * jobId],
                 _buffers[2 * jobId + 1], blkSize, _transformType,
@@ -416,7 +416,7 @@ int CompressedInputStream::processBlock() THROW
             if (res._error != 0)
                 throw IOException(res._msg, res._error); // deallocate in catch block
 
-			delete task;
+            delete task;
             decoded += res._decoded;
             const int size = _sa->_index + decoded;
 
@@ -486,8 +486,8 @@ int CompressedInputStream::processBlock() THROW
             }
         }
 
-		for (DecodingTask<DecodingTaskResult>* task : tasks)
-			delete task;
+        for (DecodingTask<DecodingTaskResult>* task : tasks)
+            delete task;
 
         tasks.clear();
 #endif
@@ -555,7 +555,7 @@ DecodingTask<T>::DecodingTask(SliceArray<byte>* iBuffer, SliceArray<byte>* oBuff
     uint64 transformType, uint32 entropyType, int blockId,
     InputBitStream* ibs, XXHash32* hasher,
     atomic_int* processedBlockId, vector<Listener*>& listeners,
-	Context& ctx)
+    Context& ctx)
     : _ctx(ctx)
 {
     _blockLength = blockSize;
@@ -652,7 +652,7 @@ T DecodingTask<T>::run() THROW
         }
 
         const int savedIdx = _data->_index;
-		_ctx.putInt("size", preTransformLength);
+        _ctx.putInt("size", preTransformLength);
 
         // Each block is decoded separately
         // Rebuild the entropy decoder to reset block statistics

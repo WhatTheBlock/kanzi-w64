@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2019 Frederic Langlet
+Copyright 2011-2017 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -80,7 +80,7 @@ namespace kanzi
 
 	   void decodeChunk(byte block[], int end);
 
-	   int decodeSymbol(uint8*& p, int& st, const ANSDecSymbol& sym, const int mask);
+	   int decodeSymbol(byte*& p, int& st, const ANSDecSymbol& sym, const int mask);
 
 	   int decodeHeader(uint frequencies[]);
    };
@@ -93,7 +93,7 @@ namespace kanzi
    }
 
 
-   inline int ANSRangeDecoder::decodeSymbol(uint8*& p, int& st, const ANSDecSymbol& sym, const int mask)
+   inline int ANSRangeDecoder::decodeSymbol(byte*& p, int& st, const ANSDecSymbol& sym, const int mask)
    {
       // Compute next ANS state
       // D(x) = (s, q_s (x/M) + mod(x,M) - b_s) where s is such b_s <= x mod M < b_{s+1}
@@ -101,8 +101,8 @@ namespace kanzi
 
       // Normalize
       while (st < ANS_TOP) {
-	      st = (st << 8) | (*p++);
-	      st = (st << 8) | (*p++);
+	      st = (st << 8) | int(*p++);
+	      st = (st << 8) | int(*p++);
       }
 
       return st;

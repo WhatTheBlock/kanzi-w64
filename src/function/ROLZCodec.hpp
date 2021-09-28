@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2019 Frederic Langlet
+Copyright 2011-2017 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -48,7 +48,7 @@ namespace kanzi {
 
 		int get();
 
-		void setContext(byte ctx) { _ctx = uint8(ctx) << _logSize; }
+		void setContext(byte ctx) { _ctx = int32(ctx) << _logSize; }
 	};
 
 	class ROLZEncoder {
@@ -118,8 +118,9 @@ namespace kanzi {
 		bool inverse(SliceArray<byte>& src, SliceArray<byte>& dst, int length) THROW;
 
 		// Required encoding output buffer size
-		int getMaxEncodedLength(int srcLen) const {
-			return (srcLen <= 512) ? srcLen + 64 : srcLen;
+		int getMaxEncodedLength(int srcLen) const
+		{
+		   return (srcLen <= 512) ? srcLen + 64 : srcLen;
 		}
 
 	private:
@@ -227,7 +228,7 @@ namespace kanzi {
 	   if (_c1 >= _size)
 	      _c1 = 1;
    }
-   
+
 
    inline int ROLZPredictor::get()
    {

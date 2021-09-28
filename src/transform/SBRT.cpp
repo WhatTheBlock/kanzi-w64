@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#include "SBRT.hpp"
 #include <stdexcept>
+#include "SBRT.hpp"
 
 using namespace kanzi;
 
@@ -28,9 +28,9 @@ SBRT::SBRT(int mode) :
 }
 
 SBRT::SBRT(int mode, Context&) :
-    _mask1((mode == MODE_TIMESTAMP) ? 0 : -1)
-    , _mask2((mode == MODE_MTF) ? 0 : -1)
-    , _shift((mode == MODE_RANK) ? 1 : 0)
+	  _mask1((mode == MODE_TIMESTAMP) ? 0 : -1)
+	, _mask2((mode == MODE_MTF) ? 0 : -1)
+	, _shift((mode == MODE_RANK) ? 1 : 0)
 {
     if ((mode != MODE_MTF) && (mode != MODE_RANK) && (mode != MODE_TIMESTAMP))
         throw invalid_argument("Invalid mode parameter");
@@ -48,7 +48,7 @@ bool SBRT::forward(SliceArray<byte>& input, SliceArray<byte>& output, int count)
         throw invalid_argument("Invalid output block");
 
     // Aliasing
-    uint8* src = (uint8*) &input._array[input._index];
+    byte* src = &input._array[input._index];
     byte* dst = &output._array[output._index];
     int p[256] = { 0 };
     int q[256] = { 0 };
@@ -61,7 +61,7 @@ bool SBRT::forward(SliceArray<byte>& input, SliceArray<byte>& output, int count)
     }
 
     for (int i = 0; i < count; i++) {
-        const uint8 c = src[i];
+        const uint8 c = uint8(src[i]);
         uint8 r = s2r[c];
         dst[i] = byte(r);
         const int qc = ((i & _mask1) + (p[c] & _mask2)) >> _shift;
@@ -96,7 +96,7 @@ bool SBRT::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int count)
         throw invalid_argument("Invalid output block");
 
     // Aliasing
-    uint8* src = (uint8*) &input._array[input._index];
+    byte* src = &input._array[input._index];
     byte* dst = &output._array[output._index];
     int p[256] = { 0 };
     int q[256] = { 0 };
@@ -106,7 +106,7 @@ bool SBRT::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int count)
         r2s[i] = uint8(i);
 
     for (int i = 0; i < count; i++) {
-        uint8 r = src[i];
+        uint8 r = uint8(src[i]);
         const int c = r2s[r];
         dst[i] = byte(c);
         const int qc = ((i & _mask1) + (p[c] & _mask2)) >> _shift;

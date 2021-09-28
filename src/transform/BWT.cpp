@@ -1,6 +1,6 @@
 
 /*
-Copyright 2011-2019 Frederic Langlet
+Copyright 2011-2017 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -194,9 +194,6 @@ bool BWT::inverseSmallBlock(SliceArray<byte>& input, SliceArray<byte>& output, i
         _buffer = new uint[_bufferSize];
     }
 
-    uint8* src = (uint8*)&input._array[input._index];
-    byte* dst = &output._array[output._index];
-
     const int pIdx = getPrimaryIndex(0);
 
     if ((pIdx < 0) || (pIdx > count))
@@ -204,7 +201,6 @@ bool BWT::inverseSmallBlock(SliceArray<byte>& input, SliceArray<byte>& output, i
 
     // Build array of packed index + value (assumes block size < 2^24)
     uint buckets[256] = { 0 };
-    uint* data = _buffer;
     Global::computeHistogram(&input._array[input._index], count, buckets, true);
 
     for (int i = 0, sum = 0; i < 256; i++) {
@@ -213,14 +209,18 @@ bool BWT::inverseSmallBlock(SliceArray<byte>& input, SliceArray<byte>& output, i
         sum += tmp;
     }
 
+    byte* src = &input._array[input._index];
+    byte* dst = &output._array[output._index];
+    uint* data = _buffer;
+
     for (int i = 0; i < pIdx; i++) {
-        const uint8 val = src[i];
+        const uint8 val = uint8(src[i]);
         data[buckets[val]] = ((i - 1) << 8) | val;
         buckets[val]++;
     }
 
     for (int i = pIdx; i < count; i++) {
-        const uint8 val = src[i];
+        const uint8 val = uint8(src[i]);
         data[buckets[val]] = (i << 8) | val;
         buckets[val]++;
     }
@@ -249,7 +249,7 @@ bool BWT::inverseBigBlock(SliceArray<byte>& input, SliceArray<byte>& output, int
         _buffer = new uint[_bufferSize];
     }
 
-    uint8* src = (uint8*)&input._array[input._index];
+    byte* src = &input._array[input._index];
     byte* dst = &output._array[output._index];
     const int pIdx = getPrimaryIndex(0);
 
@@ -271,16 +271,16 @@ bool BWT::inverseBigBlock(SliceArray<byte>& input, SliceArray<byte>& output, int
             const int hi = (sum < pIdx) ? sum : pIdx;
 
             for (int i = f; i < hi; i++)
-                ptr[src[i]]++;
+                ptr[int(src[i])]++;
 
             const int lo = (f - 1 > pIdx) ? f - 1 : pIdx;
 
             for (int i = lo; i < sum - 1; i++)
-                ptr[src[i]]++;
+                ptr[int(src[i])]++;
         }
     }
 
-    const int lastc = src[0];
+    const int lastc = int(src[0]);
     uint16* fastBits = new uint16[MASK_FASTBITS + 1];
     memset(&fastBits[0], 0, (MASK_FASTBITS + 1) * sizeof(uint16));
     int shift = 0;
@@ -309,25 +309,25 @@ bool BWT::inverseBigBlock(SliceArray<byte>& input, SliceArray<byte>& output, int
     uint* data = &_buffer[0];
 
     for (int i = 0; i < pIdx; i++) {
-        const uint8 c = src[i];
+        const uint8 c = uint8(src[i]);
         const int p = freqs[c];
         freqs[c]++;
 
         if (p < pIdx)
-            data[buckets[(c << 8) | src[p]]++] = i;
+            data[buckets[(c << 8) | int(src[p])]++] = i;
         else if (p > pIdx)
-            data[buckets[(c << 8) | src[p - 1]]++] = i;
+            data[buckets[(c << 8) | int(src[p - 1])]++] = i;
     }
 
     for (int i = pIdx; i < count; i++) {
-        const uint8 c = src[i];
+        const uint8 c = uint8(src[i]);
         const int p = freqs[c];
         freqs[c]++;
 
         if (p < pIdx)
-            data[buckets[(c << 8) | src[p]]++] = i + 1;
+            data[buckets[(c << 8) | int(src[p])]++] = i + 1;
         else if (p > pIdx)
-            data[buckets[(c << 8) | src[p - 1]]++] = i + 1;
+            data[buckets[(c << 8) | int(src[p - 1])]++] = i + 1;
     }
 
     for (int c = 0; c < 256; c++) {
@@ -383,11 +383,11 @@ bool BWT::inverseBigBlock(SliceArray<byte>& input, SliceArray<byte>& output, int
 
         // Wait for completion of all concurrent tasks
         for (int j = 0; j < nbTasks; j++)
-			futures[j].get();
+            futures[j].get();
 
         // Cleanup
-		for (InverseBigChunkTask<int>* task : tasks)
-			delete task;
+        for (InverseBigChunkTask<int>* task : tasks)
+            delete task;
 
         tasks.clear();
         delete[] jobsPerTask;

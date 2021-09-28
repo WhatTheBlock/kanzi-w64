@@ -1,5 +1,5 @@
 /*
-Copyright 2011-2019 Frederic Langlet
+Copyright 2011-2017 Frederic Langlet
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 you may obtain a copy of the License at
@@ -15,7 +15,6 @@ limitations under the License.
 
 #include <cstring>
 #include "BWTBlockCodec.hpp"
-
 
 using namespace kanzi;
 
@@ -96,7 +95,7 @@ bool BWTBlockCodec::forward(SliceArray<byte>& input, SliceArray<byte>& output, i
         blockMode = (blockMode << 6) | ((primaryIndex >> shift) & 0x3F);
         p0[idx++] = byte(blockMode);
 
-		while (shift >= 8) {
+        while (shift >= 8) {
             shift -= 8;
             p0[idx++] = byte(primaryIndex >> shift);
         }
@@ -123,7 +122,7 @@ bool BWTBlockCodec::inverse(SliceArray<byte>& input, SliceArray<byte>& output, i
 
     for (int i = 0; i < chunks; i++) {
         // Read block header (mode + primary index). See top of file for format
-        const int blockMode = int(input._array[input._index++]) & 0xFF;
+        const int blockMode = int(input._array[input._index++]);
         const int pIndexSizeBytes = 1 + ((blockMode >> 6) & 0x03);
 
         if (blockSize < pIndexSizeBytes)
@@ -136,7 +135,7 @@ bool BWTBlockCodec::inverse(SliceArray<byte>& input, SliceArray<byte>& output, i
         // Extract BWT primary index
         for (int n = 1; n < pIndexSizeBytes; n++) {
             shift -= 8;
-            primaryIndex |= ((int(input._array[input._index++]) & 0xFF) << shift);
+            primaryIndex |= (int(input._array[input._index++]) << shift);
         }
 
         if (_pBWT->setPrimaryIndex(i, primaryIndex) == false)

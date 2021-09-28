@@ -23,7 +23,7 @@ limitations under the License.
 using namespace kanzi;
 
 // 1024 of the most common English words with at least 2 chars.
-char TextCodec::DICT_EN_1024[] =
+char TextCodec::DICT_EN_1024[] = 
 "TheBeAndOfInToWithItThatForYouHeHaveOnSaidSayAtButWeByHadTheyAsW\
 ouldWhoOrCanMayDoThisWasIsMuchAnyFromNotSheWhatTheirWhichGetGive\
 HasAreHimHerComeMyOurWereWillSomeBecauseThereThroughTellWhenWork\
@@ -157,7 +157,7 @@ int TextCodec::createDictionary(char words[], int dictSize, DictEntry dict[], in
 
     for (int i = 0; ((i < dictSize) && (nbWords < maxWords)); i++) {
         const byte b = byte(words[i]);
-
+        
         if (isText(b) == false)
             continue;
 
@@ -191,8 +191,8 @@ byte TextCodec::computeStats(const byte block[], int count, int32 freqs0[])
     int32 f1[256] = { 0 };
     int32 f3[256] = { 0 };
     int32 f2[256] = { 0 };
-    const uint8* data = reinterpret_cast<const uint8*>(&block[0]);
     uint8 prv = 0;
+    const uint8* data = reinterpret_cast<const uint8*>(&block[0]);
     const int count4 = count & -4;
 
     // Unroll loop
@@ -299,7 +299,7 @@ TextCodec::TextCodec()
 TextCodec::TextCodec(Context& ctx)
 {
     int encodingType = ctx.getInt("textcodec", 1);
-    _delegate = (encodingType == 1) ? reinterpret_cast<Function<byte>*>(new TextCodec1(ctx)) :
+    _delegate = (encodingType == 1) ? reinterpret_cast<Function<byte>*>(new TextCodec1(ctx)) : 
         reinterpret_cast<Function<byte>*>(new TextCodec2(ctx));
 }
 
@@ -399,7 +399,7 @@ void TextCodec1::reset(int count)
     const int mapSize = 1 << _logHashSize;
 
     if (_dictMap == nullptr)
-        _dictMap = new DictEntry * [mapSize];
+        _dictMap = new DictEntry*[mapSize];
 
     for (int i = 0; i < mapSize; i++)
         _dictMap[i] = nullptr;
@@ -613,12 +613,12 @@ int TextCodec1::emitSymbols(byte src[], byte dst[], const int srcEnd, const int 
         if (dstIdx >= dstEnd)
             return -1;
 
-        // Work around incorrect warning by GCC 7.x.x with C++17
+// Work around incorrect warning by GCC 7.x.x with C++17
 #ifdef __GNUC__
-#if (__GNUC__ == 7) && (__cplusplus > 201402L)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wswitch"
-#endif
+    #if (__GNUC__ == 7) && (__cplusplus > 201402L)
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wswitch"
+    #endif
 #endif
 
         const byte cur = src[i];
@@ -652,11 +652,11 @@ int TextCodec1::emitSymbols(byte src[], byte dst[], const int srcEnd, const int 
         }
     }
 
-    // Work around incorrect warning by GCC 7.x.x with C++17
+// Work around incorrect warning by GCC 7.x.x with C++17
 #ifdef __GNUC__
-#if (__GNUC__ == 7) && (__cplusplus > 201402L)
-#pragma GCC diagnostic pop
-#endif
+    #if (__GNUC__ == 7) && (__cplusplus > 201402L)
+        #pragma GCC diagnostic pop
+    #endif
 #endif
 
     return dstIdx;
@@ -755,7 +755,7 @@ bool TextCodec1::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int 
         if ((cur == TextCodec::ESCAPE_TOKEN1) || (cur == TextCodec::ESCAPE_TOKEN2)) {
             // Word in dictionary
             // Read word index (varint 5 bits + 7 bits + 7 bits)
-            int idx = int(src[srcIdx++]) & 0xFF;
+            int idx = int(src[srcIdx++]);
 
             if ((idx & 0x80) != 0) {
                 idx &= 0x7F;
@@ -799,7 +799,7 @@ bool TextCodec1::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int 
 
             // Flip case of first character ?
             if (cur == TextCodec::ESCAPE_TOKEN2)
-                dst[dstIdx] ^= byte(0x20);
+               dst[dstIdx] ^= byte(0x20);
 
             dstIdx += length;
         }
@@ -865,7 +865,7 @@ void TextCodec2::reset(int count)
     const int mapSize = 1 << _logHashSize;
 
     if (_dictMap == nullptr)
-        _dictMap = new DictEntry * [mapSize];
+        _dictMap = new DictEntry*[mapSize];
 
     for (int i = 0; i < mapSize; i++)
         _dictMap[i] = nullptr;
@@ -1064,12 +1064,12 @@ bool TextCodec2::expandDictionary()
 
 int TextCodec2::emitSymbols(byte src[], byte dst[], const int srcEnd, const int dstEnd)
 {
-    // Work around incorrect warning by GCC 7.x.x with C++17
+// Work around incorrect warning by GCC 7.x.x with C++17
 #ifdef __GNUC__
-#if (__GNUC__ == 7) && (__cplusplus > 201402L)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wswitch"
-#endif
+    #if (__GNUC__ == 7) && (__cplusplus > 201402L)
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wswitch"
+    #endif
 #endif
 
     int dstIdx = 0;
@@ -1137,11 +1137,11 @@ int TextCodec2::emitSymbols(byte src[], byte dst[], const int srcEnd, const int 
         }
     }
 
-    // Work around incorrect warning by GCC 7.x.x with C++17
+// Work around incorrect warning by GCC 7.x.x with C++17
 #ifdef __GNUC__
-#if (__GNUC__ == 7) && (__cplusplus > 201402L)
-#pragma GCC diagnostic pop
-#endif
+    #if (__GNUC__ == 7) && (__cplusplus > 201402L)
+        #pragma GCC diagnostic pop
+    #endif
 #endif
 
     return dstIdx;
@@ -1270,7 +1270,6 @@ bool TextCodec2::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int 
             if ((buf == nullptr) || (dstIdx + length >= dstEnd))
                 break;
 
-
             // Emit word
             if (length > 1) {
                 // Add space if only delimiter between 2 words (not an escaped delimiter)
@@ -1291,7 +1290,7 @@ bool TextCodec2::inverse(SliceArray<byte>& input, SliceArray<byte>& output, int 
 
             // Flip case of first character ?
             if ((cur & TextCodec::MASK_20) != byte(0))
-                dst[dstIdx] ^= byte(0x20);
+               dst[dstIdx] ^= byte(0x20);
 
             dstIdx += length;
         }
